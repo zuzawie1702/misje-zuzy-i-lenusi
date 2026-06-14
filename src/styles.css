@@ -27,3 +27,88 @@ nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);box-
 .companion .avatar{font-size:38px}
 
 .worldCard{background:#fff}
+
+
+/* Aktualizacja 2.8 — nowoczesny tryb RPG + telefon */
+body{
+  background:
+    radial-gradient(circle at 20% 0%, rgba(139,92,246,.45), transparent 35%),
+    radial-gradient(circle at 95% 10%, rgba(236,72,153,.28), transparent 32%),
+    linear-gradient(135deg,#07091d,#13112f 45%,#111827);
+  color:#f8fafc;
+}
+body:before{content:"";background:linear-gradient(180deg,rgba(255,255,255,.04),transparent);opacity:1}
+header{text-align:left;max-width:980px;margin:0 auto}
+header h1{color:#fff;text-shadow:0 0 20px rgba(168,85,247,.35)}
+header p{color:#cbd5e1}
+.card,.task,.mini,.panel{
+  background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.05));
+  border:1px solid rgba(167,139,250,.28);
+  color:#f8fafc;
+  box-shadow:0 20px 55px rgba(0,0,0,.35);
+}
+.task p,.mini p,.panel p{color:#dbe4ff}
+.person.zuza,.person.lena,.quote,.goal,.patron,.lessonBox,.companion.zuza,.companion.lena{
+  background:linear-gradient(135deg,rgba(88,28,135,.38),rgba(15,23,42,.78));
+  border:1px solid rgba(216,180,254,.35);
+  color:#fff;
+}
+.pill{background:rgba(255,255,255,.12);color:#f8fafc;border:1px solid rgba(255,255,255,.12)}
+.progress{background:rgba(255,255,255,.12);border:0}
+button{box-shadow:none;border:1px solid rgba(255,255,255,.12)}
+.primary{background:linear-gradient(135deg,#7c3aed,#db2777)}
+.blue{background:linear-gradient(135deg,#2563eb,#7c3aed);color:white}
+.success{background:linear-gradient(135deg,#14b8a6,#22c55e);color:#022c22}
+.warn{background:linear-gradient(135deg,#f97316,#db2777);color:white}
+nav{background:rgba(8,10,30,.86);backdrop-filter:blur(14px);border-top:1px solid rgba(167,139,250,.25)}
+nav button{color:#c4b5fd}
+nav button.active{background:linear-gradient(135deg,#7c3aed,#db2777);color:#fff;border-radius:16px}
+.worldScreen{display:block}
+.heroQuest{
+  position:relative;overflow:hidden;border-radius:28px;padding:26px;margin:14px 0;
+  min-height:320px;background:
+  linear-gradient(90deg,rgba(8,10,30,.88),rgba(8,10,30,.25)),
+  radial-gradient(circle at 70% 40%,rgba(168,85,247,.55),transparent 30%),
+  linear-gradient(135deg,#0f172a,#312e81);
+  border:1px solid rgba(167,139,250,.35);box-shadow:0 25px 70px rgba(0,0,0,.45)
+}
+.heroQuest h2{font-size:34px;margin:8px 0}.heroQuest p{max-width:470px;line-height:1.55;color:#e2e8f0}.eyebrow{font-weight:950;color:#c4b5fd;letter-spacing:.08em}
+.heroArt{position:absolute;right:8%;bottom:28%;font-size:82px;filter:drop-shadow(0 14px 30px rgba(0,0,0,.45))}
+.heroArt span{display:inline-block;margin-left:-12px}
+.progressLine{position:absolute;left:26px;right:26px;bottom:20px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,.15);padding-top:12px}
+.worldGrid{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
+.panel{border-radius:24px;padding:16px}
+.panel.wide{grid-column:1/-1}
+.questCard{display:grid;grid-template-columns:58px 1fr 42px;gap:12px;align-items:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:12px;margin:10px 0}
+.questCard.compact{grid-template-columns:52px 1fr 38px}
+.questCard.done{opacity:.72}
+.iconTile{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:28px;background:linear-gradient(135deg,#7c3aed,#db2777);color:#fff}
+.iconTile.zwierzęta,.iconTile.zwierzęta{background:linear-gradient(135deg,#0f766e,#22c55e)}
+.iconTile.nauka{background:linear-gradient(135deg,#2563eb,#7c3aed)}
+.circleBtn{width:38px;height:38px;border-radius:50%;padding:0;background:rgba(255,255,255,.08);color:#fff;font-size:20px}
+.gardenZones,.visitorRow,.discoveryRow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.zone,.visitor,.discovery{min-height:105px;border-radius:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);padding:10px;text-align:center;display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center}
+.zone span,.visitor span,.discovery span{font-size:34px}.zone b,.visitor b,.discovery b{font-size:13px}.zone small,.visitor small,.discovery small{color:#cbd5e1}
+.locked{opacity:.45;filter:grayscale(.55)}
+.storyLine{border-left:3px solid #7c3aed;padding:10px 12px;margin:10px 0;background:rgba(255,255,255,.05);border-radius:14px}
+.storyPreview{border-color:rgba(236,72,153,.38)}
+@media(max-width:760px){
+  header{padding:16px 14px 4px} header h1{font-size:26px}
+  main{padding:8px 10px 112px}
+  .profiles,.grid,.grid3,.worldGrid{grid-template-columns:1fr}
+  .heroQuest{min-height:370px;padding:20px}
+  .heroQuest h2{font-size:30px}
+  .heroArt{right:18px;bottom:74px;font-size:58px}
+  .progressLine{left:20px;right:20px}
+  .gardenZones,.visitorRow,.discoveryRow{grid-template-columns:repeat(2,1fr)}
+  .questCard{grid-template-columns:48px 1fr 36px}
+  .iconTile{width:46px;height:46px;font-size:24px}
+  nav{justify-content:flex-start;padding:0 6px}
+  nav button{min-width:72px;font-size:10.5px}
+  .animals{grid-template-columns:repeat(3,1fr)}
+}
+@media(min-width:900px){
+  nav{left:0;top:0;bottom:0;right:auto;width:190px;display:block;padding-top:18px;border-top:0;border-right:1px solid rgba(167,139,250,.25)}
+  nav button{display:block;width:calc(100% - 20px);margin:8px 10px;text-align:left;padding:13px 15px;font-size:14px}
+  main,header{margin-left:210px;max-width:1240px}
+}

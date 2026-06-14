@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, WEEKLY_REWARDS, PLACEMENT_TESTS, ACHIEVEMENTS, COMPANION_EVOLUTIONS, WORLD_CHAPTERS, GARDEN_VISITORS } from "./data/content.js";
+import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, WEEKLY_REWARDS, PLACEMENT_TESTS, ACHIEVEMENTS, COMPANION_EVOLUTIONS, WORLD_CHAPTERS, GARDEN_VISITORS, STORY_MISSIONS, DISCOVERIES } from "./data/content.js";
 import { db, hasFirebaseConfig, doc, onSnapshot, setDoc, serverTimestamp } from "./firebase.js";
 import "./styles.css";
 
@@ -9,7 +9,7 @@ const initialState = {
   xp:{zuza:0,lena:0,team:0}, streak:{zuza:0,lena:0},
   pets:{zuza:"🐉",lena:"🦊"}, themes:{zuza:"amethyst",lena:"pink"},
   tasks:{}, taskHistory:{}, weeklyAssignments:{}, weeklyKey:"",
-  completedLessons:{}, completedQuizzes:{}, placementResults:{}, placementDone:false, achievements:{}, companionEvolution:{zuza:1,lena:1}, companionRewards:{}, worldDiscoveries:{}, stats:{lessons:0, quizzes:0, animalCare:0}, emergency:false, journal:[],
+  completedLessons:{}, completedQuizzes:{}, placementResults:{}, placementDone:false, achievements:{}, companionEvolution:{zuza:1,lena:1}, companionRewards:{}, worldDiscoveries:{}, completedStoryMissions:{}, stats:{lessons:0, quizzes:0, animalCare:0}, emergency:false, journal:[],
   checkins:{}, chronicle:[], weeklyGoal:{ name:"Pizza", xp:500, icon:"🍕" },
   rewards:[
     {name:"Lody / kakao",cost:50},{name:"Wspólny film",cost:100},{name:"Pizza",cost:250},{name:"Kawiarnia",cost:400},{name:"Kino",cost:1000},{name:"Restauracja",cost:1200},{name:"Park trampolin",cost:1500}
@@ -230,6 +230,40 @@ function App(){
     return "🦊 Lisek wspiera ciekawość i przewidywalny rytm.";
   }
 
+
+  function modernIcon(type){
+    const map = {
+      heart:"♡", paw:"✦", book:"▣", map:"◇", spark:"✧", bolt:"ϟ",
+      feather:"⌁", crystal:"◆", leaf:"❧", scroll:"☉"
+    };
+    return map[type] || "✦";
+  }
+
+  function completeStoryMission(mission){
+    if(state.completedStoryMissions?.[mission.id]){
+      showToast("Ta misja fabularna jest już zaliczona ✅");
+      return;
+    }
+    let next = structuredClone(state);
+    if(!next.completedStoryMissions) next.completedStoryMissions={};
+    next.completedStoryMissions[mission.id] = { at:new Date().toLocaleString("pl-PL") };
+    next.xp.team += mission.xp;
+    next = addChronicle(next, `Misja fabularna ukończona: ${mission.title} (+${mission.xp} XP drużyny).`, "🌌");
+    next = checkAchievements(next);
+    next = checkAllCompanions(next);
+    save(next);
+    showToast(`🌌 Misja fabularna +${mission.xp} XP`);
+  }
+
+  function unlockedStoryMissions(){
+    return STORY_MISSIONS.filter(m => (state.xp.team||0) >= m.unlockXp);
+  }
+
+  function chapterProgress(){
+    const unlocked = WORLD_CHAPTERS.filter(c => (state.xp.team||0) >= c.xp).length;
+    return `${unlocked} / ${WORLD_CHAPTERS.length}`;
+  }
+
   const gardenItems=["🌱","🌷","🌻","🌳","🦋","🐝","🍓","🌿","🌸","🍄","🪴","🌺"];
   const garden=Array.from({length:Math.min(18,level(state.xp.team)+4)},(_,i)=>gardenItems[i%gardenItems.length]).join(" ");
   const goal = state.weeklyGoal || initialState.weeklyGoal;
@@ -244,6 +278,7 @@ function App(){
         <section className="card patron"><h2>{patron.icon} Patron tygodnia: {patron.name}</h2><p>Ten tydzień prowadzi {patron.name}. Cechy: {patron.traits.join(", ")}.</p><span className="pill">🐾 Stado wspiera misje</span><span className="pill">🔋 Tryb dnia: {energySuggestedMode()}</span></section>
         <section className="card row"><span className={`pill ${online?"online":"offline"}`}>{online?"☁️ internet jest":"📴 offline"}</span><span className={`pill ${cloudReady?"online":"offline"}`}>{hasFirebaseConfig?(cloudReady?"✅ baza działa":"łączę z bazą"):"Firebase niepodpięty"}</span><button className="warn" onClick={()=>save({...state,emergency:!state.emergency})}>🚨 Minimum ratunkowe</button><button className="blue" onClick={ensureWeek}>🎲 Podział tygodnia</button><button className="primary" onClick={pickNextMission}>⭐ Wybierz mi misję</button></section>
         {nextMission&&<section className="card"><h2>⭐ Następna dobra misja</h2><div className="task"><b>{ownerIcon(nextMission.assigned)} {nextMission.title}</b><p>{ownerLabel(nextMission.assigned)} · {nextMission.description}</p><button className="success" onClick={()=>finishTask(nextMission)}>Zrobione +{nextMission.xp} XP</button></div></section>}
+        <section className="card storyPreview"><div className="row"><h2>🌌 Misje fabularne</h2><button className="blue" onClick={()=>setTab("world")}>Przejdź do świata</button></div>{unlockedStoryMissions().slice(0,2).map(m=><div className="questCard compact" key={m.id}><div className={`iconTile ${m.area.toLowerCase()}`}>{modernIcon(m.icon)}</div><div><b>{m.title}</b><p>{m.description}</p></div><button className="circleBtn" onClick={()=>completeStoryMission(m)}>{state.completedStoryMissions?.[m.id]?"✓":"○"}</button></div>)}</section>
         <section className="profiles">{["zuza","lena"].map(p=><div className={`person ${p}`} key={p}><div className="row"><div><b>{ownerLabel(p)}</b><br/><span className="pill">Poziom {level(state.xp[p])}</span></div><div className="avatar">{state.pets[p]}</div></div><p>XP: <b>{state.xp[p]}</b> · Seria: <b>{state.streak[p]}</b></p><div className="progress"><div className="bar" style={{width:bar(state.xp[p])}} /></div></div>)}</section>
         <section className="grid">
           {["zuza","lena"].map(p=>{

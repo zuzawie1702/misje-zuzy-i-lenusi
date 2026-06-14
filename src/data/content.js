@@ -351,3 +351,21 @@ export const GARDEN_VISITORS = [
  {xp:2000, icon:"🦌", name:"Sarna"},
  {xp:5000, icon:"🦄", name:"Jednorożec"}
 ];
+
+
+export const STORY_MISSIONS = [
+  { id:"story_kind_note", area:"Relacje", title:"List od przyjaciela", description:"Zrób dziś coś miłego dla kogoś bliskiego i zapisz jedno zdanie w Kronice.", xp:30, icon:"heart", unlockXp:0 },
+  { id:"story_coco_help", area:"Zwierzęta", title:"Coco potrzebuje pomocy", description:"Zadbaj o Coco albo inne zwierzę i zanotuj krótką obserwację.", xp:40, icon:"paw", unlockXp:0 },
+  { id:"story_knowledge_clue", area:"Nauka", title:"Ciekawostka dnia", description:"Przeczytaj jedną mikrolekcję z Akademii i rozwiąż quiz.", xp:25, icon:"book", unlockXp:0 },
+  { id:"story_old_oak", area:"Świat", title:"Znak na Starym Dębie", description:"Wykonaj dowolną misję i odblokuj kolejny ślad na mapie.", xp:35, icon:"map", unlockXp:300 },
+  { id:"story_logic_key", area:"Logika", title:"Klucz Lisa", description:"Rozwiąż quiz, zagadkę albo zadanie matematyczne. Lis szuka szyfru.", xp:35, icon:"spark", unlockXp:500 },
+  { id:"story_dragon_flame", area:"Smok", title:"Iskra Smoka", description:"Wybierz jedną trudniejszą misję. Smok Zuzy wzmacnia ogień działania.", xp:45, icon:"bolt", unlockXp:700 }
+];
+
+export const DISCOVERIES = [
+  { id:"old_map", xp:0, icon:"map", title:"Stara mapa", description:"Pierwszy ślad Ogrodu Pięciu Ścieżek." },
+  { id:"owl_feather", xp:300, icon:"feather", title:"Pióro Strażniczki", description:"Znak, że ktoś obserwuje postępy drużyny." },
+  { id:"courage_crystal", xp:700, icon:"crystal", title:"Kryształ odwagi", description:"Kryształ znaleziony przy korzeniach starego dębu." },
+  { id:"moon_leaf", xp:1200, icon:"leaf", title:"Księżycowy liść", description:"Liść, który świeci tylko po wykonaniu dobrej misji." },
+  { id:"lost_scroll", xp:1800, icon:"scroll", title:"Fragment dziennika", description:"Część historii dawnego opiekuna ogrodu." }
+];
