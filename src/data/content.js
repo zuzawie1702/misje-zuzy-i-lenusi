@@ -312,3 +312,27 @@ export const ACHIEVEMENTS = [
   { id:"weeklyHero", icon:"🏆", title:"Bohater tygodnia", description:"Drużyna przekroczyła 500 XP." },
   { id:"academyMaster", icon:"📚", title:"Mistrz Akademii", description:"Ukończono 5 lekcji." }
 ];
+
+
+export const COMPANION_EVOLUTIONS = {
+  zuza: {
+    name:"Smok Zuzy",
+    stages:[
+      { level:1, icon:"🐉", title:"Mały Smok", description:"Dopiero budzi swój ogień. Wspiera start i małe kroki." },
+      { level:3, icon:"🔥🐉", title:"Smok Iskry", description:"Pojawia się pierwsza moc działania. Bonus za naukę i misje głowy." },
+      { level:6, icon:"📚🐉", title:"Smok Wiedzy", description:"Smok lubi akademię, angielski, ICD-11 i szachy." },
+      { level:10, icon:"⚡🐉", title:"Smok Burzowy", description:"Pomaga w trudniejsze dni i przy większych wyzwaniach." },
+      { level:15, icon:"👑🐉", title:"Strażnik Stada", description:"Smok staje się opiekunem całego świata misji." }
+    ]
+  },
+  lena: {
+    name:"Lis Lenusi",
+    stages:[
+      { level:1, icon:"🦊", title:"Mały Lis", description:"Ciekawy świata, ostrożny i uważny." },
+      { level:3, icon:"🎒🦊", title:"Lis Odkrywca", description:"Lubi mikrolekcje, zagadki i nowe ciekawostki." },
+      { level:6, icon:"🩺🦊", title:"Lis Weterynarz", description:"Wspiera naukę o zwierzętach i obserwację stada." },
+      { level:10, icon:"♟️🦊", title:"Lis Strateg", description:"Pomaga przy szachach, logice i matematyce." },
+      { level:15, icon:"✨🦊", title:"Lis Mistrzyni", description:"Ma własną mądrość i prowadzi Lenusię przez wyzwania." }
+    ]
+  }
+};
