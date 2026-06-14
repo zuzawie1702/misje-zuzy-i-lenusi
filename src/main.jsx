@@ -1,6 +1,7 @@
+
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, ACHIEVEMENTS, LEVEL_TESTS } from "./data/content.js";
+import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, WEEKLY_REWARDS } from "./data/content.js";
 import { db, hasFirebaseConfig, doc, onSnapshot, setDoc, serverTimestamp } from "./firebase.js";
 import "./styles.css";
 
@@ -8,105 +9,150 @@ const initialState = {
   xp:{zuza:0,lena:0,team:0}, streak:{zuza:0,lena:0},
   pets:{zuza:"🐉",lena:"🦊"}, themes:{zuza:"amethyst",lena:"pink"},
   tasks:{}, taskHistory:{}, weeklyAssignments:{}, weeklyKey:"",
-  completedLessons:{}, completedLessonQuizzes:{}, emergency:false, journal:[], checkins:{},
-  skillLevels:{zuza:{},lena:{}}, quizResults:{},
-  weeklyGoal:{name:"Kino", target:700},
-  rewards:[{name:"Lody / kakao",cost:50},{name:"Wspólny film",cost:100},{name:"Pizza",cost:250},{name:"Kawiarnia",cost:400},{name:"Kino",cost:1000},{name:"Restauracja",cost:1200},{name:"Park trampolin",cost:1500}],
-  updatedAt:null
+  completedLessons:{}, completedQuizzes:{}, emergency:false, journal:[],
+  checkins:{}, chronicle:[], weeklyGoal:{ name:"Pizza", xp:500, icon:"🍕" },
+  rewards:[
+    {name:"Lody / kakao",cost:50},{name:"Wspólny film",cost:100},{name:"Pizza",cost:250},{name:"Kawiarnia",cost:400},{name:"Kino",cost:1000},{name:"Restauracja",cost:1200},{name:"Park trampolin",cost:1500}
+  ], updatedAt:null
 };
-const level=xp=>Math.floor((xp||0)/100)+1;
-const bar=xp=>`${Math.min(100,(xp||0)%100)}%`;
-const ownerLabel=w=>w==="zuza"?"Zuza":w==="lena"?"Lenusia":"Drużyna";
-const ownerIcon=w=>w==="zuza"?"💜":w==="lena"?"🩷":"🤝";
-const randomFrom=list=>list[Math.floor(Math.random()*list.length)];
-const todayKey=()=>new Date().toISOString().slice(0,10);
-const weekKey=()=>{const d=new Date(), onejan=new Date(d.getFullYear(),0,1); const week=Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7); return `${d.getFullYear()}-${week}`};
-const dateMMDD=()=>new Date().toISOString().slice(5,10);
-function makeWeeklyAssignments(){const rot=TASKS.filter(t=>t.who==="rotation"), a={}; rot.forEach((t,i)=>a[t.id]=i%2===0?"zuza":"lena"); return a;}
-function assignedOwner(task,state){ if(task.who!=="rotation") return task.who; const wk=weekKey(); if(state.weeklyKey===wk && state.weeklyAssignments?.[task.id]) return state.weeklyAssignments[task.id]; return makeWeeklyAssignments()[task.id]||"zuza"; }
-function checkAchievement(a,state){ const c=a.check; if(c.type==="teamXp") return (state.xp.team||0)>=c.value; if(c.type==="personXp") return (state.xp[c.person]||0)>=c.value; return false; }
+
+function level(xp){return Math.floor((xp||0)/100)+1}
+function bar(xp){return `${Math.min(100,(xp||0)%100)}%`}
+function ownerLabel(w){return w==="zuza"?"Zuza":w==="lena"?"Lenusia":"Drużyna"}
+function ownerIcon(w){return w==="zuza"?"💜":w==="lena"?"🩷":"🤝"}
+function randomFrom(list){return list[Math.floor(Math.random()*list.length)]}
+function todayKey(){return new Date().toISOString().slice(0,10)}
+function weekKey(){const d=new Date(); const onejan=new Date(d.getFullYear(),0,1); const week=Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7); return `${d.getFullYear()}-${week}`}
+function dateMMDD(){return new Date().toISOString().slice(5,10)}
+function patronForWeek(){ const wk=weekKey().split("-")[1] || "1"; return REAL_ANIMALS[Number(wk)%REAL_ANIMALS.length]; }
+
+function makeWeeklyAssignments(){
+  const rotationTasks = TASKS.filter(t=>t.who==="rotation");
+  const assignments = {};
+  rotationTasks.forEach((t,i)=>{ assignments[t.id] = i % 2 === 0 ? "zuza" : "lena"; });
+  return assignments;
+}
+
+function assignedOwner(task,state){
+  if(task.who !== "rotation") return task.who;
+  const wk = weekKey();
+  if(state.weeklyKey === wk && state.weeklyAssignments?.[task.id]) return state.weeklyAssignments[task.id];
+  return makeWeeklyAssignments()[task.id] || "zuza";
+}
 
 function App(){
   const [tab,setTab]=useState("home");
-  const [state,setState]=useState(()=>{const l=localStorage.getItem("misje_state"); return l?{...initialState,...JSON.parse(l)}:initialState});
-  const [online,setOnline]=useState(navigator.onLine), [cloudReady,setCloudReady]=useState(false);
+  const [state,setState]=useState(()=>{const local=localStorage.getItem("misje_state"); return local ? {...initialState,...JSON.parse(local)} : initialState});
+  const [online,setOnline]=useState(navigator.onLine);
+  const [cloudReady,setCloudReady]=useState(false);
   const [workout,setWorkout]=useState(randomFrom(WORKOUTS));
-  const [lessonPerson,setLessonPerson]=useState("lena"), [lessonCategory,setLessonCategory]=useState("Weterynaria"), [lesson,setLesson]=useState(null), [lessonQuizAnswer,setLessonQuizAnswer]=useState(null);
-  const [toast,setToast]=useState(""), [journalText,setJournalText]=useState(""), [rewardName,setRewardName]=useState(""), [rewardCost,setRewardCost]=useState("");
-  const [quizPerson,setQuizPerson]=useState("lena"), [quizCategory,setQuizCategory]=useState("Weterynaria"), [answers,setAnswers]=useState({});
-  const appDocRef=useMemo(()=>hasFirebaseConfig&&db?doc(db,"families","zuza-lenusia"):null,[]);
-  useEffect(()=>{const go=()=>setOnline(navigator.onLine); window.addEventListener("online",go); window.addEventListener("offline",go); return()=>{window.removeEventListener("online",go);window.removeEventListener("offline",go)}},[]);
-  useEffect(()=>localStorage.setItem("misje_state",JSON.stringify(state)),[state]);
-  useEffect(()=>{if(!appDocRef)return; const unsub=onSnapshot(appDocRef,async snap=>{if(snap.exists()){setState({...initialState,...snap.data()}); setCloudReady(true)}else{await setDoc(appDocRef,{...initialState,updatedAt:serverTimestamp()}); setCloudReady(true)}}); return()=>unsub()},[appDocRef]);
-  function showToast(t){setToast(t); setTimeout(()=>setToast(""),2400)}
-  async function save(next){localStorage.setItem("misje_state",JSON.stringify(next)); setState(next); if(appDocRef) await setDoc(appDocRef,{...next,updatedAt:serverTimestamp()},{merge:true});}
-  function ensureWeek(){const wk=weekKey(); save({...state,weeklyKey:wk,weeklyAssignments:makeWeeklyAssignments()}); showToast("🎲 Tygodniowy podział obowiązków gotowy!")}
-  const special=FAMILY_EVENTS.find(e=>e.date===dateMMDD());
-  const visibleTasks=TASKS.map(t=>({...t,assigned:assignedOwner(t,state)})).filter(t=>!state.emergency||["irena","read_zuza","read_lena","exercise_zuza","exercise_lena","emotions","animal_water"].includes(t.id));
-  function setTaskStatus(id,status){const n=structuredClone(state); n.tasks[id]=status; save(n)}
-  function finishTask(task){if(state.tasks?.[task.id]==="done"){showToast("To zadanie jest już zaliczone ✅");return} const n=structuredClone(state), who=task.assigned; n.tasks[task.id]="done"; n.taskHistory[task.id]=who; if(who==="zuza"||who==="lena"){n.xp[who]+=task.xp;n.streak[who]+=1;n.xp.team+=Math.ceil(task.xp/2)}else n.xp.team+=task.xp; save(n); showToast(`🎉 ${ownerLabel(who)} zdobywa +${task.xp} XP!`)}
-  function customXp(who,xp,label="Misja"){const n=structuredClone(state); if(who==="team") n.xp.team+=xp; else{n.xp[who]+=xp;n.streak[who]+=1;n.xp.team+=Math.ceil(xp/2)} save(n); showToast(`✨ ${label}: +${xp} XP dla ${ownerLabel(who)}!`)}
-  function chooseLesson(){setLesson({...randomFrom(LESSONS[lessonPerson][lessonCategory]),id:`${Date.now()}`}); setLessonQuizAnswer(null)}
+  const [lessonPerson,setLessonPerson]=useState("lena");
+  const [lessonCategory,setLessonCategory]=useState("Weterynaria");
+  const [lesson,setLesson]=useState(null);
+  const [quizResult,setQuizResult]=useState("");
+  const [toast,setToast]=useState("");
+  const [journalText,setJournalText]=useState("");
+  const [rewardName,setRewardName]=useState("");
+  const [rewardCost,setRewardCost]=useState("");
+  const [nextMission,setNextMission]=useState(null);
 
-  function getLessonQuiz(){
-    const bank = {
-      lena:{
-        "Weterynaria": { q:"Co jest najważniejsze w obserwacji zwierzęcia?", a:["Zmiana zachowania","Kolor miski","To, czy zwierzę wygląda słodko"], correct:0, explain:"Zmiana zachowania często jest pierwszym sygnałem bólu, stresu albo choroby." },
-        "Matematyka": { q:"Jak najłatwiej policzyć 2% z liczby?", a:["Najpierw 1%, potem razy 2","Zawsze dodać 2","Podzielić przez 2"], correct:0, explain:"1% to liczba podzielona przez 100. Potem mnożysz przez 2." },
-        "Szachy": { q:"Co to są widełki?", a:["Atak jedną figurą na dwa cele","Specjalny remis","Ruch pionem do tyłu"], correct:0, explain:"Widełki tworzą sytuację, w której przeciwnik nie może uratować wszystkiego naraz." },
-        "Język obcy": { q:"Co znaczy vet?", a:["weterynarz","stajnia","kopyto"], correct:0, explain:"Vet to skrót od veterinarian, czyli weterynarz." }
-      },
-      zuza:{
-        "Uzależnienia ICD-11": { q:"Co pomaga rozróżnić ICD-11?", a:["Substancje i zachowania nałogowe","Kolory emocji","Rodzaje ogrodów"], correct:0, explain:"ICD-11 rozróżnia m.in. zaburzenia związane z substancjami i zachowaniami nałogowymi." },
-        "Psychodeliki": { q:"Co jest ważne w badaniach nad psychodelikami?", a:["Set, setting i integracja","Tylko dawka","Tylko muzyka"], correct:0, explain:"Bez przygotowania, bezpieczeństwa i integracji doświadczenie może być trudne lub źle zinterpretowane." },
-        "Ogrodnik 2.0": { q:"Po co stosuje się ściółkę?", a:["Żeby chronić glebę i zatrzymywać wilgoć","Żeby ziemia była goła","Żeby rośliny miały mniej życia w glebie"], correct:0, explain:"Ściółka ogranicza parowanie, wspiera mikroorganizmy i chroni strukturę gleby." },
-        "Szachy": { q:"Dlaczego centrum jest ważne?", a:["Figury mają większy wpływ na grę","Bo jest najładniejsze","Bo tam zawsze stoi król"], correct:0, explain:"Kontrola centrum daje figurom więcej możliwości i ułatwia rozwój." },
-        "Język angielski": { q:"Co znaczy craving?", a:["głód / silna chęć","zmęczenie","radość"], correct:0, explain:"Craving to głód substancji lub silna chęć powrotu do zachowania nałogowego." },
-        "Łamigłówki": { q:"Co trenują łamigłówki kliniczne?", a:["Rozpoznawanie wzorców i hipotez","Tylko szybkość klikania","Pamięć dat"], correct:0, explain:"Pomagają ćwiczyć elastyczne myślenie i szukanie alternatywnych wyjaśnień." }
-      }
-    };
-    return bank[lessonPerson]?.[lessonCategory] || { q:"Co najlepiej zrobić po lekcji?", a:["Zastosować jedną rzecz w praktyce","Zapomnieć od razu","Kliknąć losowo"], correct:0, explain:"Najlepiej utrwala się wiedza użyta od razu w małym zadaniu." };
-  }
-  function answerLessonQuiz(idx){
-    const quiz = getLessonQuiz();
-    setLessonQuizAnswer(idx);
-    const key = `${todayKey()}-${lessonPerson}-${lessonCategory}-${lesson?.title}-quiz`;
-    if(idx === quiz.correct && !state.completedLessonQuizzes?.[key]){
-      const n = structuredClone(state);
-      if(!n.completedLessonQuizzes) n.completedLessonQuizzes = {};
-      n.completedLessonQuizzes[key] = true;
-      n.xp[lessonPerson] += 5;
-      n.xp.team += 2;
-      save(n);
-      showToast(`🧩 Dobra odpowiedź! +5 XP dla ${ownerLabel(lessonPerson)}`);
-    } else if(idx === quiz.correct){
-      showToast("✅ Dobrze! Quiz już był nagrodzony.");
-    } else {
-      showToast("Jeszcze nie — zobacz wyjaśnienie i spróbuj zapamiętać 💡");
+  const appDocRef=useMemo(()=>hasFirebaseConfig&&db?doc(db,"families","zuza-lenusia"):null,[]);
+  useEffect(()=>{const go=()=>setOnline(navigator.onLine); window.addEventListener("online",go); window.addEventListener("offline",go); return()=>{window.removeEventListener("online",go); window.removeEventListener("offline",go)}},[]);
+  useEffect(()=>{localStorage.setItem("misje_state",JSON.stringify(state))},[state]);
+  useEffect(()=>{if(!appDocRef)return; const unsub=onSnapshot(appDocRef,async snap=>{if(snap.exists()){setState({...initialState,...snap.data()}); setCloudReady(true)} else {await setDoc(appDocRef,{...initialState,updatedAt:serverTimestamp()}); setCloudReady(true)}}); return()=>unsub()},[appDocRef]);
+
+  function showToast(t){setToast(t); setTimeout(()=>setToast(""),2300)}
+  function addChronicle(next, text, icon="✨"){ if(!next.chronicle) next.chronicle=[]; next.chronicle.unshift({date:new Date().toLocaleString("pl-PL"), text, icon}); return next; }
+  async function save(next){localStorage.setItem("misje_state",JSON.stringify(next)); setState(next); if(appDocRef) await setDoc(appDocRef,{...next,updatedAt:serverTimestamp()},{merge:true})}
+  function ensureWeek(){
+    const wk=weekKey();
+    if(state.weeklyKey!==wk){
+      let next={...state, weeklyKey:wk, weeklyAssignments:makeWeeklyAssignments(), weeklyGoal:randomFrom(WEEKLY_REWARDS)};
+      next=addChronicle(next,`Nowy tydzień: wybrano cel ${next.weeklyGoal.icon} ${next.weeklyGoal.name}.`,"🎯");
+      save(next); showToast("🎲 Nowy tygodniowy podział i cel gotowe!");
     }
   }
 
-  function completeLesson(){if(!lesson)return; const key=`${todayKey()}-${lessonPerson}-${lessonCategory}-${lesson.title}`; if(state.completedLessons?.[key]){showToast("Ta mikrolekcja jest już zaliczona dzisiaj ✅");return} const n=structuredClone(state); if(!n.completedLessons)n.completedLessons={}; n.completedLessons[key]=true; n.xp[lessonPerson]+=10; n.streak[lessonPerson]+=1; n.xp.team+=5; save(n); showToast(`🎓 +10 XP dla ${ownerLabel(lessonPerson)} i +5 XP drużyny`)}
-  function addCheckin(time,mood,energy,overload){const n=structuredClone(state); if(!n.checkins)n.checkins={}; if(!n.checkins[todayKey()])n.checkins[todayKey()]={}; n.checkins[todayKey()][time]={mood,energy,overload,at:new Date().toLocaleTimeString("pl-PL")}; save(n); showToast("🔋 Check-in zapisany!")}
-  function addJournal(){if(!journalText.trim())return showToast("Wystarczy jedno zdanie 🙂"); const n=structuredClone(state); n.journal.unshift({person:lessonPerson,text:journalText.trim(),date:new Date().toLocaleString("pl-PL")}); n.xp[lessonPerson]+=10;n.xp.team+=5; setJournalText(""); save(n); showToast("❤️ Wpis zapisany +10 XP")}
-  function addReward(){if(!rewardName.trim()||!rewardCost)return showToast("Wpisz nazwę i koszt"); const n=structuredClone(state); n.rewards.push({name:rewardName.trim(),cost:Number(rewardCost)}); setRewardName(""); setRewardCost(""); save(n)}
-  function setPet(person,pet){if(state.xp[person]<pet.unlock){showToast(`🔒 ${pet.name} od ${pet.unlock} XP`);return} save({...state,pets:{...state.pets,[person]:pet.icon}})}
+  const special = FAMILY_EVENTS.find(e=>e.date===dateMMDD());
+  const patron = patronForWeek();
+  const visibleTasks = TASKS.map(t=>({...t,assigned:assignedOwner(t,state)})).filter(t=>!state.emergency || ["irena","read_zuza","read_lena","exercise_zuza","exercise_lena","emotions","animal_water"].includes(t.id));
+  const openTasks = visibleTasks.filter(t=>state.tasks?.[t.id] !== "done");
+
+  function setTaskStatus(id,status){const next=structuredClone(state); next.tasks[id]=status; save(next)}
+  function finishTask(task){
+    if(state.tasks?.[task.id]==="done"){showToast("To zadanie jest już zaliczone ✅"); return}
+    const assigned=task.assigned; let next=structuredClone(state);
+    next.tasks[task.id]="done"; next.taskHistory[task.id]=assigned;
+    if(assigned==="zuza"||assigned==="lena"){next.xp[assigned]+=task.xp; next.streak[assigned]+=1; next.xp.team+=Math.ceil(task.xp/2)} else next.xp.team+=task.xp;
+    next=addChronicle(next,`${ownerLabel(assigned)} ukończyła misję: ${task.title} (+${task.xp} XP).`, "✅");
+    save(next); showToast(`🎉 ${ownerLabel(assigned)} zdobywa +${task.xp} XP!`);
+  }
+  function customXp(who,xp,label="Misja"){let next=structuredClone(state); if(who==="team")next.xp.team+=xp; else{next.xp[who]+=xp; next.streak[who]+=1; next.xp.team+=Math.ceil(xp/2)} next=addChronicle(next,`${label}: +${xp} XP dla ${ownerLabel(who)}.`, "✨"); save(next); showToast(`✨ ${label}: +${xp} XP dla ${ownerLabel(who)}!`)}
+  function chooseLesson(){const arr=LESSONS[lessonPerson][lessonCategory]; setLesson({...randomFrom(arr),id:`${Date.now()}`}); setQuizResult("");}
+  function completeLesson(){
+    if(!lesson)return; const key=`${todayKey()}-${lessonPerson}-${lessonCategory}-${lesson.title}`;
+    if(state.completedLessons?.[key]){showToast("Ta mikrolekcja jest już zaliczona dzisiaj ✅"); return}
+    let next=structuredClone(state); if(!next.completedLessons)next.completedLessons={}; next.completedLessons[key]=true; next.xp[lessonPerson]+=10; next.streak[lessonPerson]+=1; next.xp.team+=5; next=addChronicle(next,`${ownerLabel(lessonPerson)} przeczytała lekcję: ${lesson.title}.`, "🎓"); save(next); showToast(`🎓 +10 XP dla ${ownerLabel(lessonPerson)} i +5 XP drużyny`);
+  }
+  function answerQuiz(index){
+    if(!lesson?.quiz) return;
+    const key=`${todayKey()}-${lessonPerson}-${lessonCategory}-${lesson.title}-quiz`;
+    const correct = index === lesson.quiz.answer;
+    setQuizResult((correct ? "✅ Dobrze! " : "🟡 Nie tym razem. ") + lesson.quiz.explain);
+    if(correct && !state.completedQuizzes?.[key]){
+      let next=structuredClone(state); if(!next.completedQuizzes)next.completedQuizzes={}; next.completedQuizzes[key]=true; next.xp[lessonPerson]+=5; next.xp.team+=2; next=addChronicle(next,`${ownerLabel(lessonPerson)} poprawnie rozwiązała quiz: ${lesson.title}.`, "🧩"); save(next); showToast("🧩 Quiz dobrze! +5 XP");
+    }
+  }
+  function addCheckin(time, mood, energy, overload){
+    let next=structuredClone(state); if(!next.checkins)next.checkins={}; if(!next.checkins[todayKey()])next.checkins[todayKey()]={};
+    next.checkins[todayKey()][time]={mood,energy,overload,at:new Date().toLocaleTimeString("pl-PL")};
+    next=addChronicle(next,`Check-in ${time}: nastrój ${mood}, energia ${energy}, przeciążenie ${overload}.`, "🔋");
+    save(next); showToast("🔋 Check-in zapisany!");
+  }
+  function addJournal(){if(!journalText.trim())return showToast("Wystarczy jedno zdanie 🙂"); let next=structuredClone(state); next.journal.unshift({person:lessonPerson,text:journalText.trim(),date:new Date().toLocaleString("pl-PL")}); next.xp[lessonPerson]+=10; next.xp.team+=5; next=addChronicle(next,`${ownerLabel(lessonPerson)} dodała wpis w relacjach/emocjach.`, "❤️"); setJournalText(""); save(next); showToast("❤️ Wpis zapisany +10 XP")}
+  function addReward(){if(!rewardName.trim()||!rewardCost)return showToast("Wpisz nazwę i koszt"); const next=structuredClone(state); next.rewards.push({name:rewardName.trim(),cost:Number(rewardCost)}); setRewardName(""); setRewardCost(""); save(next)}
+  function setPet(person,pet){ if(state.xp[person] < pet.unlock){showToast(`🔒 ${pet.name} od ${pet.unlock} XP`); return} save({...state,pets:{...state.pets,[person]:pet.icon}})}
   function setTheme(person,id){save({...state,themes:{...state.themes,[person]:id}})}
-  function pickNextMission(){const open=visibleTasks.filter(t=>state.tasks?.[t.id]!=="done"); const chosen=open.find(t=>t.assigned==="team")||open[0]||visibleTasks[0]; if(chosen){setTab("tasks"); showToast(`⭐ Następna dobra misja: ${chosen.title}`)}}
-  function submitQuiz(){const qs=LEVEL_TESTS[quizPerson][quizCategory]; let score=0; qs.forEach((q,i)=>{if(Number(answers[i])===q.correct)score++}); const lvl=Math.max(1,Math.ceil((score/qs.length)*5)); const n=structuredClone(state); if(!n.skillLevels)n.skillLevels={zuza:{},lena:{}}; if(!n.quizResults)n.quizResults={}; n.skillLevels[quizPerson][quizCategory]=lvl; n.quizResults[`${quizPerson}-${quizCategory}`]={score,total:qs.length,date:new Date().toLocaleString("pl-PL")}; save(n); showToast(`🎯 Poziom ${ownerLabel(quizPerson)} w kategorii ${quizCategory}: ${lvl}/5`)}
-  const gardenItems=["🌱","🌷","🌻","🌳","🦋","🐝","🍓","🌿","🌸","🍄","🪴","🌺"]; const garden=Array.from({length:Math.min(18,level(state.xp.team)+4)},(_,i)=>gardenItems[i%gardenItems.length]).join(" ");
-  const goal=state.weeklyGoal||initialState.weeklyGoal, goalPct=Math.min(100,Math.round((state.xp.team/goal.target)*100));
-  const quizCategories=Object.keys(LEVEL_TESTS[quizPerson]);
-  return <div><header><h1>🌈 Misje Zuzy i Lenusi</h1><p>Rodzinna gra rozwojowa: misje, stado, nauka, energia i wspólny progres.</p></header><main>
-    {tab==="home"&&<><section className="card quote"><b>Hasło dnia:</b><br/>Nie musimy zrobić wszystkiego. Robimy następną dobrą misję. 🐾</section>{special&&<section className="card" style={{borderColor:"#facc15"}}><h2>{special.icon} {special.title}</h2><p>{special.bonus}</p><span className="pill">🎂 Wydarzenie specjalne</span></section>}<section className="card row"><span className={`pill ${online?"online":"offline"}`}>{online?"☁️ internet jest":"📴 offline"}</span><span className={`pill ${cloudReady?"online":"offline"}`}>{hasFirebaseConfig?(cloudReady?"✅ baza działa":"łączę z bazą"):"Firebase niepodpięty"}</span><button className="warn" onClick={()=>save({...state,emergency:!state.emergency})}>🚨 Minimum ratunkowe</button><button className="blue" onClick={ensureWeek}>🎲 Podział tygodnia</button></section><section className="profiles">{["zuza","lena"].map(p=><div className={`person ${p}`} key={p}><div className="row"><div><b>{ownerLabel(p)}</b><br/><span className="pill">Poziom {level(state.xp[p])}</span></div><div className="avatar">{state.pets[p]}</div></div><p>XP: <b>{state.xp[p]}</b> · Seria: <b>{state.streak[p]}</b></p><div className="progress"><div className="bar" style={{width:bar(state.xp[p])}} /></div></div>)}</section><section className="card goalCard"><h2>🏆 Cel tygodnia: {goal.name}</h2><p><span className="pill">{state.xp.team}/{goal.target} XP drużyny</span><span className="pill">{goalPct}%</span></p><div className="progress"><div className="bar" style={{width:`${goalPct}%`}} /></div><button className="primary bigAction" onClick={pickNextMission}>⭐ Wybierz mi następną misję</button></section><section className="card"><h2>🌱 Ogród drużyny</h2><p><span className="pill">⭐ {state.xp.team} XP drużyny</span> <span className="pill">Poziom ogrodu {level(state.xp.team)}</span></p><div className="garden">{garden}</div></section><section className="card"><h2>🎖️ Osiągnięcia</h2><div className="grid">{ACHIEVEMENTS.map(a=>{const ok=checkAchievement(a,state);return <div className={`mini achievement ${ok?"":"locked"}`} key={a.id}><h3>{a.icon} {a.title}</h3><p>{a.description}</p><span className="pill">{ok?"Odblokowane":"Jeszcze nie"}</span></div>})}</div></section></>}
-    {tab==="tasks"&&<section className="card"><div className="row"><h2>✅ Misje</h2><button onClick={()=>save({...state,tasks:{}})}>Nowy dzień</button></div>{state.emergency&&<div className="task warn"><b>Minimum ratunkowe włączone.</b><br/>Mniej zadań, bez kar i bez utraty punktów.</div>}{visibleTasks.map(task=>{const status=state.tasks?.[task.id]||"todo";return <div className={`task ${status}`} key={task.id}><div className="row"><b>{ownerIcon(task.assigned)} {task.title}</b><span className="pill">{ownerLabel(task.assigned)} · {task.frequency} · +{task.xp} XP</span></div><p>{task.area} · {task.description}</p><button onClick={()=>setTaskStatus(task.id,"todo")}>Do zrobienia</button><button className="warn" onClick={()=>setTaskStatus(task.id,"doing")}>W trakcie</button><button className="success" disabled={status==="done"} onClick={()=>finishTask(task)}>{status==="done"?"✓ Zaliczone":"Zrobione"}</button></div>})}</section>}
-    {tab==="body"&&<section className="card"><h2>🏇 Ćwiczenia jeździeckie</h2><p>20 minut: 3 ćwiczenia wspierające dosiad, balans, biodra i stabilizację.</p><button className="primary" onClick={()=>setWorkout(randomFrom(WORKOUTS))}>Losuj zestaw</button><div className="task"><h3>{workout.name}</h3>{workout.items.map(item=><div className="mini" key={item[0]}><div className="row"><b>{item[0]}</b><span className="avatar">{item[2]}</span></div><p>{item[1]}</p></div>)}<button className="success" onClick={()=>customXp("team",20,"Trening")}>Trening zrobiony +20 XP</button></div></section>}
-    {tab==="learn"&&<section className="card"><h2>🧠 Akademie</h2><div className="grid"><select value={lessonPerson} onChange={e=>{const p=e.target.value;setLessonPerson(p);setLessonCategory(Object.keys(LESSONS[p])[0]);setLesson(null)}}><option value="lena">Lenusia</option><option value="zuza">Zuza</option></select><select value={lessonCategory} onChange={e=>{setLessonCategory(e.target.value);setLesson(null)}}>{Object.keys(LESSONS[lessonPerson]).map(c=><option key={c}>{c}</option>)}</select></div>{state.skillLevels?.[lessonPerson]?.[lessonCategory]&&<p><span className="pill">🎯 Poziom: {state.skillLevels[lessonPerson][lessonCategory]}/5</span></p>}<button className="primary" onClick={chooseLesson}>🎲 Losuj mikrolekcję</button>{lesson&&<div className="task lessonBox"><h3>🎓 {lesson.title}</h3><p><b>Miniwykład:</b> {lesson.text}</p><p><b>Dlaczego to ważne:</b> {lesson.why}</p><p><b>Przykład:</b> {lesson.example}</p>{lesson.steps&&<ol className="steps">{lesson.steps.map(s=><li key={s}>{s}</li>)}</ol>}<p><b>Zadanie:</b> {lesson.task}</p><div className="quizInLesson"><h3>🧩 Miniquiz po lekcji</h3><p><b>{getLessonQuiz().q}</b></p>{getLessonQuiz().a.map((ans,i)=><button key={ans} className={lessonQuizAnswer===i ? "quizOption selected" : "quizOption"} onClick={()=>answerLessonQuiz(i)}>{lessonQuizAnswer===i ? "👉 " : ""}{ans}</button>)}{lessonQuizAnswer!==null&&<p className="quizExplain">{lessonQuizAnswer===getLessonQuiz().correct ? "✅ Dobra odpowiedź. " : "💡 Wyjaśnienie: "}{getLessonQuiz().explain}</p>}</div><button className="success" onClick={completeLesson}>✓ Przeczytane +10 XP</button></div>}</section>}
-    {tab==="test"&&<section className="card"><h2>🎯 Test poziomujący</h2><p>Dzięki temu aplikacja nie zaczyna od zbyt łatwych rzeczy.</p><div className="grid"><select value={quizPerson} onChange={e=>{const p=e.target.value;setQuizPerson(p);setQuizCategory(Object.keys(LEVEL_TESTS[p])[0]);setAnswers({})}}><option value="lena">Lenusia</option><option value="zuza">Zuza</option></select><select value={quizCategory} onChange={e=>{setQuizCategory(e.target.value);setAnswers({})}}>{quizCategories.map(c=><option key={c}>{c}</option>)}</select></div>{LEVEL_TESTS[quizPerson][quizCategory].map((q,i)=><div className="task" key={i}><b>{i+1}. {q.q}</b>{q.a.map((ans,j)=><button className="quizOption" key={ans} onClick={()=>setAnswers({...answers,[i]:j})}>{answers[i]===j?"✅ ":""}{ans}</button>)}{answers[i]!==undefined&&<p className="tiny">{q.explain}</p>}</div>)}<button className="primary" onClick={submitQuiz}>Zapisz poziom</button></section>}
-    {tab==="energy"&&<section className="card"><h2>🔋 Energia i samopoczucie</h2><p>Check-in 3 razy dziennie. Wystarczy kliknąć jedną linię.</p>{["rano","popołudnie","wieczór"].map(t=><div className="task" key={t}><h3>{t==="rano"?"🌅":t==="popołudnie"?"☀️":"🌙"} {t}</h3><div className="grid3"><button onClick={()=>addCheckin(t,"dobrze","dużo","mało")}>😊 🔋 dużo 🌿 spokojnie</button><button onClick={()=>addCheckin(t,"tak sobie","średnio","średnio")}>😐 🔋 średnio ⚖️ trochę</button><button onClick={()=>addCheckin(t,"słabo","mało","dużo")}>😔 🔋 mało 🌪️ za dużo</button></div></div>)}</section>}
-    {tab==="animals"&&<section className="card"><h2>🐾 Nasze stado</h2><div className="grid">{REAL_ANIMALS.map(a=><div className="mini" key={a.id}><h3>{a.icon} {a.name}</h3><p>{a.species} · {a.sex}</p><p>{a.traits.map(t=><span className="pill" key={t}>{t}</span>)}</p></div>)}</div></section>}
-    {tab==="pets"&&<section className="card"><h2>🐾 Zwierzaki i motywy</h2>{["zuza","lena"].map(p=><div className="task" key={p}><h3>{ownerLabel(p)}</h3><p>Motyw:</p>{THEMES[p].map(th=><button key={th.id} style={{background:th.color,color:"white"}} onClick={()=>setTheme(p,th.id)}>{th.name}</button>)}<p>Zwierzak:</p><div className="animals">{PETS.map(pet=><button key={pet.name} className={state.xp[p]<pet.unlock?"locked":""} onClick={()=>setPet(p,pet)} title={`${pet.name} od ${pet.unlock} XP`}>{pet.icon}</button>)}</div></div>)}<h3>🎁 Nagrody</h3>{state.rewards.map((r,i)=><div className="mini" key={i}>🎁 {r.name} — {r.cost} XP drużyny</div>)}<div className="grid"><input value={rewardName} onChange={e=>setRewardName(e.target.value)} placeholder="Nowa nagroda"/><input value={rewardCost} onChange={e=>setRewardCost(e.target.value)} type="number" placeholder="Koszt XP"/></div><button className="primary" onClick={addReward}>Dodaj nagrodę</button></section>}
-    {tab==="relations"&&<section className="card"><h2>❤️ Emocje i relacje</h2><textarea value={journalText} onChange={e=>setJournalText(e.target.value)} placeholder="Jedno zdanie wystarczy: dziś czułam... potrzebowałam..."/><button className="success" onClick={addJournal}>Zapisz wpis +10 XP</button>{state.journal.slice(0,5).map((j,i)=><div className="mini" key={i}><span className="pill">{ownerLabel(j.person)} · {j.date}</span><p>{j.text}</p></div>)}</section>}
-  </main>{toast&&<div className="toast">{toast}</div>}<nav>{[["home","🏠","Start"],["tasks","✅","Misje"],["body","🏇","Ciało"],["learn","🧠","Nauka"],["test","🎯","Test"],["energy","🔋","Energia"],["animals","🐾","Stado"],["relations","❤️","Relacje"],["pets","🎨","Profil"]].map(([id,icon,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{icon}<br/>{label}</button>)}</nav></div>
+  function pickNextMission(){ const t=randomFrom(openTasks.length?openTasks:visibleTasks); setNextMission(t); showToast(`⭐ Wybrano misję: ${t.title}`); }
+
+  const gardenItems=["🌱","🌷","🌻","🌳","🦋","🐝","🍓","🌿","🌸","🍄","🪴","🌺"];
+  const garden=Array.from({length:Math.min(18,level(state.xp.team)+4)},(_,i)=>gardenItems[i%gardenItems.length]).join(" ");
+  const goal = state.weeklyGoal || initialState.weeklyGoal;
+  const goalPct = Math.min(100, Math.round((state.xp.team / goal.xp) * 100));
+
+  return <div>
+    <header><h1>🌈 Misje Zuzy i Lenusi</h1><p>Rodzinna gra rozwojowa: misje, stado, nauka, energia i wspólny progres.</p></header>
+    <main>
+      {tab==="home"&&<>
+        <section className="card quote"><b>Hasło dnia:</b><br/>Nie musimy zrobić wszystkiego. Robimy następną dobrą misję. 🐾</section>
+        {special&&<section className="card" style={{borderColor:"#facc15"}}><h2>{special.icon} {special.title}</h2><p>{special.bonus}</p><span className="pill">🎂 Wydarzenie specjalne</span></section>}
+        <section className="card patron"><h2>{patron.icon} Patron tygodnia: {patron.name}</h2><p>Ten tydzień prowadzi {patron.name}. Cechy: {patron.traits.join(", ")}.</p><span className="pill">🐾 Stado wspiera misje</span></section>
+        <section className="card row"><span className={`pill ${online?"online":"offline"}`}>{online?"☁️ internet jest":"📴 offline"}</span><span className={`pill ${cloudReady?"online":"offline"}`}>{hasFirebaseConfig?(cloudReady?"✅ baza działa":"łączę z bazą"):"Firebase niepodpięty"}</span><button className="warn" onClick={()=>save({...state,emergency:!state.emergency})}>🚨 Minimum ratunkowe</button><button className="blue" onClick={ensureWeek}>🎲 Podział tygodnia</button><button className="primary" onClick={pickNextMission}>⭐ Wybierz mi misję</button></section>
+        {nextMission&&<section className="card"><h2>⭐ Następna dobra misja</h2><div className="task"><b>{ownerIcon(nextMission.assigned)} {nextMission.title}</b><p>{ownerLabel(nextMission.assigned)} · {nextMission.description}</p><button className="success" onClick={()=>finishTask(nextMission)}>Zrobione +{nextMission.xp} XP</button></div></section>}
+        <section className="profiles">{["zuza","lena"].map(p=><div className={`person ${p}`} key={p}><div className="row"><div><b>{ownerLabel(p)}</b><br/><span className="pill">Poziom {level(state.xp[p])}</span></div><div className="avatar">{state.pets[p]}</div></div><p>XP: <b>{state.xp[p]}</b> · Seria: <b>{state.streak[p]}</b></p><div className="progress"><div className="bar" style={{width:bar(state.xp[p])}} /></div></div>)}</section>
+        <section className="card goal"><h2>{goal.icon} Cel tygodnia: {goal.name}</h2><p><b>{state.xp.team}</b> / {goal.xp} XP drużyny</p><div className="progress"><div className="bar" style={{width:`${goalPct}%`}} /></div></section>
+        <section className="card"><h2>🌱 Ogród drużyny</h2><p><span className="pill">⭐ {state.xp.team} XP drużyny</span> <span className="pill">Poziom ogrodu {level(state.xp.team)}</span></p><div className="garden">{garden}</div></section>
+      </>}
+
+      {tab==="tasks"&&<section className="card"><div className="row"><h2>✅ Misje</h2><button onClick={()=>save({...state,tasks:{}})}>Nowy dzień</button></div>{state.emergency&&<div className="task warn"><b>Minimum ratunkowe włączone.</b><br/>Mniej zadań, bez kar i bez utraty punktów.</div>}{visibleTasks.map(task=>{const status=state.tasks?.[task.id]||"todo";return <div className={`task ${status}`} key={task.id}><div className="row"><b>{ownerIcon(task.assigned)} {task.title}</b><span className="pill">{ownerLabel(task.assigned)} · {task.frequency} · +{task.xp} XP</span></div><p>{task.area} · {task.description}</p><div><button onClick={()=>setTaskStatus(task.id,"todo")}>Do zrobienia</button><button className="warn" onClick={()=>setTaskStatus(task.id,"doing")}>W trakcie</button><button className="success" disabled={status==="done"} onClick={()=>finishTask(task)}>{status==="done"?"✓ Zaliczone":"Zrobione"}</button></div></div>})}</section>}
+
+      {tab==="body"&&<section className="card"><h2>🏇 Ćwiczenia jeździeckie</h2><p>20 minut: 3 ćwiczenia wspierające dosiad, balans, biodra i stabilizację.</p><button className="primary" onClick={()=>setWorkout(randomFrom(WORKOUTS))}>Losuj zestaw</button><div className="task"><h3>{workout.name}</h3>{workout.items.map(item=><div className="mini" key={item[0]}><div className="row"><b>{item[0]}</b><span className="avatar">{item[2]}</span></div><p>{item[1]}</p></div>)}<button className="success" onClick={()=>customXp("team",20,"Trening")}>Trening zrobiony +20 XP</button></div></section>}
+
+      {tab==="learn"&&<section className="card"><h2>🧠 Akademie</h2><div className="grid"><select value={lessonPerson} onChange={e=>{const p=e.target.value;setLessonPerson(p);setLessonCategory(Object.keys(LESSONS[p])[0]);setLesson(null);setQuizResult("")}}><option value="lena">Lenusia</option><option value="zuza">Zuza</option></select><select value={lessonCategory} onChange={e=>{setLessonCategory(e.target.value);setLesson(null);setQuizResult("")}}>{Object.keys(LESSONS[lessonPerson]).map(c=><option key={c}>{c}</option>)}</select></div><button className="primary" onClick={chooseLesson}>🎲 Losuj mikrolekcję</button>{lesson&&<div className="task lessonBox"><h3>🎓 {lesson.title}</h3><p><b>Miniwykład:</b> {lesson.text}</p><p><b>Dlaczego to ważne:</b> {lesson.why}</p><p><b>Przykład:</b> {lesson.example}</p>{lesson.steps&&<ol className="steps">{lesson.steps.map(s=><li key={s}>{s}</li>)}</ol>}<p><b>Zadanie:</b> {lesson.task}</p><button className="success" onClick={completeLesson}>✓ Przeczytane +10 XP</button>{lesson.quiz&&<div className="mini"><h3>🧩 Quiz</h3><p><b>{lesson.quiz.q}</b></p>{lesson.quiz.options.map((o,i)=><button key={o} className="blue" onClick={()=>answerQuiz(i)}>{o}</button>)}{quizResult&&<p><b>{quizResult}</b></p>}</div>}</div>}</section>}
+
+      {tab==="energy"&&<section className="card"><h2>🔋 Energia i samopoczucie</h2><p>Check-in 3 razy dziennie. Wystarczy kliknąć jedną linię.</p>{["rano","popołudnie","wieczór"].map(t=><div className="task" key={t}><h3>{t==="rano"?"🌅":t==="popołudnie"?"☀️":"🌙"} {t}</h3><div className="grid3"><button onClick={()=>addCheckin(t,"dobrze","dużo","mało")}>😊 🔋 dużo 🌿 spokojnie</button><button onClick={()=>addCheckin(t,"tak sobie","średnio","średnio")}>😐 🔋 średnio ⚖️ trochę</button><button onClick={()=>addCheckin(t,"słabo","mało","dużo")}>😔 🔋 mało 🌪️ za dużo</button></div></div>)}</section>}
+
+      {tab==="animals"&&<section className="card"><h2>🐾 Nasze stado</h2><div className="grid">{REAL_ANIMALS.map(a=><div className="mini" key={a.id}><h3>{a.icon} {a.name}</h3><p>{a.species} · {a.sex}</p><p>{a.traits.map(t=><span className="pill" key={t}>{t}</span>)}</p><button className="success" onClick={()=>customXp("team",10,`Opieka: ${a.name}`)}>Misja troski +10 XP</button></div>)}</div></section>}
+
+      {tab==="chronicle"&&<section className="card"><h2>📖 Kronika Stada</h2><p>Tu zapisują się ważne momenty: misje, lekcje, quizy, check-iny i wydarzenia.</p><div className="chronicle">{(state.chronicle||[]).length===0?<div className="mini">Jeszcze pusto. Wykonaj misję albo lekcję, a pojawi się pierwszy wpis.</div>:(state.chronicle||[]).map((c,i)=><div className="mini" key={i}><span className="pill">{c.icon} {c.date}</span><p>{c.text}</p></div>)}</div></section>}
+
+      {tab==="pets"&&<section className="card"><h2>🐾 Zwierzaki i motywy</h2>{["zuza","lena"].map(p=><div className="task" key={p}><h3>{ownerLabel(p)}</h3><p>Motyw:</p>{THEMES[p].map(th=><button key={th.id} style={{background:th.color,color:"white"}} onClick={()=>setTheme(p,th.id)}>{th.name}</button>)}<p>Zwierzak:</p><div className="animals">{PETS.map(pet=><button key={pet.name} className={state.xp[p] < pet.unlock ? "locked":""} onClick={()=>setPet(p,pet)} title={`${pet.name} od ${pet.unlock} XP`}>{pet.icon}</button>)}</div></div>)}<h3>🎁 Nagrody</h3>{state.rewards.map((r,i)=><div className="mini" key={i}>🎁 {r.name} — {r.cost} XP drużyny</div>)}<div className="grid"><input value={rewardName} onChange={e=>setRewardName(e.target.value)} placeholder="Nowa nagroda"/><input value={rewardCost} onChange={e=>setRewardCost(e.target.value)} type="number" placeholder="Koszt XP"/></div><button className="primary" onClick={addReward}>Dodaj nagrodę</button></section>}
+
+      {tab==="relations"&&<section className="card"><h2>❤️ Emocje i relacje</h2><textarea value={journalText} onChange={e=>setJournalText(e.target.value)} placeholder="Jedno zdanie wystarczy: dziś czułam... potrzebowałam..."/><button className="success" onClick={addJournal}>Zapisz wpis +10 XP</button>{state.journal.slice(0,5).map((j,i)=><div className="mini" key={i}><span className="pill">{ownerLabel(j.person)} · {j.date}</span><p>{j.text}</p></div>)}</section>}
+    </main>
+
+    {toast&&<div className="toast">{toast}</div>}
+    <nav>{[["home","🏠","Start"],["tasks","✅","Misje"],["body","🏇","Ciało"],["learn","🧠","Nauka"],["energy","🔋","Energia"],["animals","🐾","Stado"],["chronicle","📖","Kronika"],["relations","❤️","Relacje"],["pets","🎨","Profil"]].map(([id,icon,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{icon}<br/>{label}</button>)}</nav>
+  </div>
 }
 createRoot(document.getElementById("root")).render(<App/>);
