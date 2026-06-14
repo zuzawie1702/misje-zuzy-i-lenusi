@@ -71,3 +71,41 @@ export const LESSONS = {
     "Łamigłówki":[{title:"Logika terapeutyczna",text:"Łamigłówki mogą trenować rozpoznawanie wzorców klinicznych.",why:"To wspiera elastyczność poznawczą.",example:"Pacjent mówi: po pracy zawsze mam ochotę się napić. Możliwe hipotezy: stres, zmęczenie, rytuał.",task:"Wypisz 3 alternatywne strategie na moment po pracy."}]
   }
 };
+
+
+export const ACHIEVEMENTS = [
+  { id:"first_steps", icon:"🌱", title:"Pierwsze kroki", description:"Wykonaj 5 misji łącznie.", check:{type:"teamXp", value:50} },
+  { id:"dragon_fire", icon:"🐉", title:"Smoczy ogień", description:"Zuza zdobywa 100 XP.", check:{type:"personXp", person:"zuza", value:100} },
+  { id:"pink_fox", icon:"🦊", title:"Różowy lisek", description:"Lenusia zdobywa 100 XP.", check:{type:"personXp", person:"lena", value:100} },
+  { id:"garden_300", icon:"🌻", title:"Ogród rośnie", description:"Drużyna zdobywa 300 XP.", check:{type:"teamXp", value:300} },
+  { id:"steady_week", icon:"⭐", title:"Tydzień w ruchu", description:"Zdobądź 700 XP drużyny.", check:{type:"teamXp", value:700} }
+];
+
+export const LEVEL_TESTS = {
+  zuza: {
+    "Język angielski": [
+      { q:"Jak przetłumaczysz: craving?", a:["głód / silna chęć","senność","złość"], correct:0, explain:"Craving to głód substancji albo silna chęć powrotu do zachowania nałogowego." },
+      { q:"Które zdanie jest najbardziej naturalne?", a:["I work as addiction therapist.","I work as an addiction therapist.","I working therapist addiction."], correct:1, explain:"Przed nazwą zawodu zwykle używamy a/an: an addiction therapist." }
+    ],
+    "Szachy": [
+      { q:"Co oznacza widełka?", a:["Atak jedną figurą na dwie figury","Roszada","Remis"], correct:0, explain:"Widełka to atak jedną figurą na dwa cele naraz." },
+      { q:"Które pola są centrum szachownicy?", a:["a1, h8","e4, d4, e5, d5","a4, h5"], correct:1, explain:"Centrum to cztery środkowe pola: e4, d4, e5, d5." }
+    ],
+    "Uzależnienia ICD-11": [
+      { q:"Czy ICD-11 obejmuje zaburzenia związane z zachowaniami nałogowymi?", a:["Tak","Nie","Tylko u dzieci"], correct:0, explain:"ICD-11 obejmuje m.in. gambling disorder i gaming disorder." }
+    ]
+  },
+  lena: {
+    "Weterynaria": [
+      { q:"Który objaw u psa może sugerować ból?", a:["Nagła kulawizna","Machanie ogonem zawsze","Spanie po spacerze"], correct:0, explain:"Nagła kulawizna jest sygnałem, że warto obserwować psa i rozważyć kontakt z weterynarzem." },
+      { q:"Co jest ważniejsze w obserwacji kota?", a:["Zmiana zachowania","Kolor miski","Długość imienia"], correct:0, explain:"U kotów ważne są subtelne zmiany zachowania: chowanie się, brak apetytu, unikanie kontaktu." }
+    ],
+    "Matematyka": [
+      { q:"Ile to 2% z 500 kg?", a:["5 kg","10 kg","100 kg"], correct:1, explain:"1% z 500 to 5, więc 2% to 10." },
+      { q:"Jeśli 20 minut dzielimy na 4 ćwiczenia, ile minut ma jedno?", a:["4","5","8"], correct:1, explain:"20 ÷ 4 = 5 minut." }
+    ],
+    "Szachy": [
+      { q:"Która figura porusza się po skosie?", a:["Goniec","Wieża","Król zawsze tylko po prostej"], correct:0, explain:"Goniec porusza się po przekątnych." }
+    ]
+  }
+};
