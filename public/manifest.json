@@ -1,0 +1,15 @@
+{
+  "name": "Misje Zuzy i Lenusi",
+  "short_name": "Misje",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff7ed",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
