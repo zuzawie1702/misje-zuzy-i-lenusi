@@ -336,3 +336,18 @@ export const COMPANION_EVOLUTIONS = {
     ]
   }
 };
+
+
+export const WORLD_CHAPTERS = [
+ {xp:0,title:"Stara mapa",text:"Smok Zuzy zauważył błysk pod starym drzewem. Lis Lenusi odgarnął liście i odkrył starą mapę prowadzącą do Ogrodu Pięciu Ścieżek."},
+ {xp:300,title:"Pierwszy znak",text:"Na mapie pojawił się symbol sowy i tajemniczy ślad prowadzący do nowej części ogrodu."},
+ {xp:700,title:"Kryształ odwagi",text:"Wśród korzeni starego dębu odnaleziono pierwszy kryształ."}
+];
+
+export const GARDEN_VISITORS = [
+ {xp:200, icon:"🐿️", name:"Wiewiórka"},
+ {xp:500, icon:"🦔", name:"Jeż"},
+ {xp:1000, icon:"🦉", name:"Sowa"},
+ {xp:2000, icon:"🦌", name:"Sarna"},
+ {xp:5000, icon:"🦄", name:"Jednorożec"}
+];

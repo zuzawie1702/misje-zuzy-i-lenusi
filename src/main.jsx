@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, WEEKLY_REWARDS, PLACEMENT_TESTS, ACHIEVEMENTS, COMPANION_EVOLUTIONS } from "./data/content.js";
+import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, WEEKLY_REWARDS, PLACEMENT_TESTS, ACHIEVEMENTS, COMPANION_EVOLUTIONS, WORLD_CHAPTERS, GARDEN_VISITORS } from "./data/content.js";
 import { db, hasFirebaseConfig, doc, onSnapshot, setDoc, serverTimestamp } from "./firebase.js";
 import "./styles.css";
 
@@ -9,7 +9,7 @@ const initialState = {
   xp:{zuza:0,lena:0,team:0}, streak:{zuza:0,lena:0},
   pets:{zuza:"🐉",lena:"🦊"}, themes:{zuza:"amethyst",lena:"pink"},
   tasks:{}, taskHistory:{}, weeklyAssignments:{}, weeklyKey:"",
-  completedLessons:{}, completedQuizzes:{}, placementResults:{}, placementDone:false, achievements:{}, companionEvolution:{zuza:1,lena:1}, companionRewards:{}, stats:{lessons:0, quizzes:0, animalCare:0}, emergency:false, journal:[],
+  completedLessons:{}, completedQuizzes:{}, placementResults:{}, placementDone:false, achievements:{}, companionEvolution:{zuza:1,lena:1}, companionRewards:{}, worldDiscoveries:{}, stats:{lessons:0, quizzes:0, animalCare:0}, emergency:false, journal:[],
   checkins:{}, chronicle:[], weeklyGoal:{ name:"Pizza", xp:500, icon:"🍕" },
   rewards:[
     {name:"Lody / kakao",cost:50},{name:"Wspólny film",cost:100},{name:"Pizza",cost:250},{name:"Kawiarnia",cost:400},{name:"Kino",cost:1000},{name:"Restauracja",cost:1200},{name:"Park trampolin",cost:1500}
@@ -273,7 +273,22 @@ function App(){
       {tab==="chronicle"&&<section className="card"><h2>📖 Kronika Stada</h2><p>Tu zapisują się ważne momenty: misje, lekcje, quizy, check-iny i wydarzenia.</p><div className="chronicle">{(state.chronicle||[]).length===0?<div className="mini">Jeszcze pusto. Wykonaj misję albo lekcję, a pojawi się pierwszy wpis.</div>:(state.chronicle||[]).map((c,i)=><div className="mini" key={i}><span className="pill">{c.icon} {c.date}</span><p>{c.text}</p></div>)}</div></section>}
 
 
-      {tab==="companions"&&<section className="card"><h2>🐉🦊 Towarzysze</h2><p>Smok Zuzy i Lis Lenusi rozwijają się razem z poziomem. Po awansie zmieniają formę i zapisują wydarzenie w Kronice.</p><div className="grid">{["zuza","lena"].map(p=>{const data=COMPANION_EVOLUTIONS[p]; const current=companionStage(p); return <div className={`task companion ${p}`} key={p}><h3>{current?.icon} {data.name}</h3><p><b>Aktualna forma:</b> {current?.title}</p><p>{current?.description}</p><h4>Ścieżka ewolucji</h4>{data.stages.map(s=><div className={`mini ${level(state.xp[p])>=s.level?"done":""}`} key={s.title}><span className="avatar">{s.icon}</span><b> Poziom {s.level}: {s.title}</b><p>{s.description}</p></div>)}</div>})}</div></section>}
+      
+      {tab==="world"&&<section className="card"><h2>🌍 Świat Gry</h2>
+      <div className="grid">
+      <div className="mini"><h3>📚 Ogród Nauki</h3><p>Rośnie dzięki lekcjom i quizom.</p></div>
+      <div className="mini"><h3>🐾 Ogród Zwierząt</h3><p>Rośnie dzięki opiece nad stadem.</p></div>
+      <div className="mini"><h3>❤️ Ogród Relacji</h3><p>Rośnie dzięki emocjom i wspólnym misjom.</p></div>
+      <div className="mini"><h3>🏇 Ogród Jeździecki</h3><p>Rośnie dzięki treningom.</p></div>
+      <div className="mini"><h3>🧩 Ogród Logiki</h3><p>Rośnie dzięki szachom i matematyce.</p></div>
+      </div>
+      <h3>📖 Fabuła</h3>
+      {WORLD_CHAPTERS.filter(c=>state.xp.team>=c.xp).map(c=><div className="mini" key={c.title}><b>{c.title}</b><p>{c.text}</p></div>)}
+      <h3>🦉 Goście Ogrodu</h3>
+      <div className="grid">{GARDEN_VISITORS.map(v=><div className="mini" key={v.name}><h3>{v.icon} {v.name}</h3><p>{state.xp.team>=v.xp?"Odwiedził ogród":"Odblokowanie przy "+v.xp+" XP"}</p></div>)}</div>
+      </section>}
+
+{tab==="companions"&&<section className="card"><h2>🐉🦊 Towarzysze</h2><p>Smok Zuzy i Lis Lenusi rozwijają się razem z poziomem. Po awansie zmieniają formę i zapisują wydarzenie w Kronice.</p><div className="grid">{["zuza","lena"].map(p=>{const data=COMPANION_EVOLUTIONS[p]; const current=companionStage(p); return <div className={`task companion ${p}`} key={p}><h3>{current?.icon} {data.name}</h3><p><b>Aktualna forma:</b> {current?.title}</p><p>{current?.description}</p><h4>Ścieżka ewolucji</h4>{data.stages.map(s=><div className={`mini ${level(state.xp[p])>=s.level?"done":""}`} key={s.title}><span className="avatar">{s.icon}</span><b> Poziom {s.level}: {s.title}</b><p>{s.description}</p></div>)}</div>})}</div></section>}
 
       {tab==="pets"&&<section className="card"><h2>🐾 Zwierzaki i motywy</h2>{["zuza","lena"].map(p=><div className="task" key={p}><h3>{ownerLabel(p)}</h3><p>Motyw:</p>{THEMES[p].map(th=><button key={th.id} style={{background:th.color,color:"white"}} onClick={()=>setTheme(p,th.id)}>{th.name}</button>)}<p>Zwierzak:</p><div className="animals">{PETS.map(pet=><button key={pet.name} className={state.xp[p] < pet.unlock ? "locked":""} onClick={()=>setPet(p,pet)} title={`${pet.name} od ${pet.unlock} XP`}>{pet.icon}</button>)}</div></div>)}<h3>🎁 Nagrody</h3>{state.rewards.map((r,i)=><div className="mini" key={i}>🎁 {r.name} — {r.cost} XP drużyny</div>)}<div className="grid"><input value={rewardName} onChange={e=>setRewardName(e.target.value)} placeholder="Nowa nagroda"/><input value={rewardCost} onChange={e=>setRewardCost(e.target.value)} type="number" placeholder="Koszt XP"/></div><button className="primary" onClick={addReward}>Dodaj nagrodę</button></section>}
 
@@ -287,7 +302,7 @@ function App(){
     </main>
 
     {toast&&<div className="toast">{toast}</div>}
-    <nav>{[["home","🏠","Start"],["tasks","✅","Misje"],["body","🏇","Ciało"],["learn","🧠","Nauka"],["energy","🔋","Energia"],["placement","🎯","Test"],["achievements","🏆","Odznaki"],["animals","🐾","Stado"],["chronicle","📖","Kronika"],["companions","🐉","Towarz."],["relations","❤️","Relacje"],["pets","🎨","Profil"]].map(([id,icon,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{icon}<br/>{label}</button>)}</nav>
+    <nav>{[["home","🏠","Start"],["tasks","✅","Misje"],["body","🏇","Ciało"],["learn","🧠","Nauka"],["energy","🔋","Energia"],["placement","🎯","Test"],["achievements","🏆","Odznaki"],["animals","🐾","Stado"],["chronicle","📖","Kronika"],["world","🌍","Świat"],["companions","🐉","Towarz."],["relations","❤️","Relacje"],["pets","🎨","Profil"]].map(([id,icon,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{icon}<br/>{label}</button>)}</nav>
   </div>
 }
 createRoot(document.getElementById("root")).render(<App/>);
