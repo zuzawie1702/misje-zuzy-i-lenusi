@@ -228,3 +228,87 @@ export const LESSONS = {
     ]
   }
 };
+
+
+export const PLACEMENT_TESTS = {
+  lena: {
+    "Weterynaria": [
+      { q:"Pies nagle kuleje i nie chce obciążać łapy. Co jest najlepszą pierwszą reakcją?", options:["Zignorować, jeśli nie piszczy","Obserwować, ograniczyć ruch i skonsultować, jeśli nie mija lub jest silne","Kazać mu dużo biegać"], answer:1 },
+      { q:"Kot od 24 godzin nie je. Co robisz?", options:["To może być ważny sygnał, warto skonsultować się z weterynarzem","Czekam miesiąc","Daję tylko nową zabawkę"], answer:0 },
+      { q:"Co może sugerować kolkę u konia?", options:["Spokojne jedzenie","Tarzanie się, patrzenie na brzuch, niepokój","Machanie ogonem przy muchach"], answer:1 },
+      { q:"Co oznacza sprawdzanie parametrów życiowych?", options:["Ocenę temperatury, tętna, oddechu i zachowania","Tylko patrzenie na kolor sierści","Tylko ważenie karmy"], answer:0 }
+    ],
+    "Matematyka": [
+      { q:"Ile to 10% z 80?", options:["8","18","800"], answer:0 },
+      { q:"Ile to 2% z 450 kg?", options:["4,5 kg","9 kg","90 kg"], answer:1 },
+      { q:"20 minut dzielimy na 4 ćwiczenia. Ile minut na jedno?", options:["4","5","8"], answer:1 },
+      { q:"1/4 godziny to ile minut?", options:["10","15","25"], answer:1 }
+    ],
+    "Szachy": [
+      { q:"Która figura porusza się po skosie?", options:["Goniec","Wieża","Król tylko do przodu"], answer:0 },
+      { q:"Co to są widełki?", options:["Atak jedną figurą na dwie figury","Remis","Bicie pionem do tyłu"], answer:0 },
+      { q:"Co jest celem gry w szachy?", options:["Zbić wszystkie piony","Dać mata królowi","Zrobić roszadę"], answer:1 },
+      { q:"Która figura przeskakuje inne figury?", options:["Skoczek","Goniec","Wieża"], answer:0 }
+    ],
+    "Angielski": [
+      { q:"Co oznacza vet?", options:["Weterynarz","Kopyto","Siodło"], answer:0 },
+      { q:"Co oznacza pain?", options:["Ból","Radość","Karma"], answer:0 },
+      { q:"Co oznacza stable?", options:["Stajnia","Kot","Głód"], answer:0 },
+      { q:"Jak po angielsku jest pies?", options:["dog","cat","horse"], answer:0 }
+    ],
+    "Logika": [
+      { q:"Jeśli wszystkie koty są zwierzętami, a Darwin jest kotem, to Darwin jest...", options:["zwierzęciem","rośliną","nie wiadomo"], answer:0 },
+      { q:"Co nie pasuje: pies, kot, koń, stół?", options:["stół","koń","kot"], answer:0 },
+      { q:"Jeśli dziś jest po poniedziałku, to może być...", options:["wtorek","niedziela przed poniedziałkiem","nie istnieje taki dzień"], answer:0 },
+      { q:"Ciąg: 2, 4, 6, 8, ...", options:["10","9","12"], answer:0 }
+    ]
+  },
+  zuza: {
+    "ICD-11": [
+      { q:"ICD-11 obejmuje m.in. zaburzenia związane z używaniem substancji oraz...", options:["zachowania nałogowe","kolor oczu","typy ogrodów"], answer:0 },
+      { q:"Gaming disorder w ICD-11 dotyczy głównie...", options:["utraty kontroli nad graniem i kontynuowania mimo szkód","czytania książek","samego posiadania komputera"], answer:0 },
+      { q:"Diagnoza powinna uwzględniać...", options:["funkcjonowanie i szkody","wyłącznie jedną rozmowę bez kontekstu","kolor telefonu"], answer:0 },
+      { q:"W pracy klinicznej ICD pomaga przede wszystkim w...", options:["porządkowaniu rozpoznania","zastępowaniu relacji terapeutycznej","wyborze koloru gabinetu"], answer:0 }
+    ],
+    "Uzależnienia": [
+      { q:"Craving oznacza...", options:["głód/chęć sięgnięcia","senność","nagrodę"], answer:0 },
+      { q:"Nawrót warto rozumieć jako...", options:["proces, nie tylko pojedyncze zdarzenie","zawsze koniec terapii","brak jakichkolwiek sygnałów"], answer:0 },
+      { q:"Wyzwalacz to...", options:["bodziec zwiększający ryzyko zachowania nałogowego","rodzaj nagrody","gatunek rośliny"], answer:0 },
+      { q:"Regulacja emocji w terapii uzależnień jest...", options:["ważna","zawsze zbędna","tematem tylko dla dzieci"], answer:0 }
+    ],
+    "Psychodeliki": [
+      { q:"Set i setting oznaczają...", options:["nastawienie i otoczenie","dawkę kawy","rodzaj muzyki tylko w radiu"], answer:0 },
+      { q:"Integracja po doświadczeniu służy...", options:["nadaniu znaczenia i przełożeniu wniosków na życie","pominięciu rozmowy","zapomnieniu wszystkiego"], answer:0 },
+      { q:"Badania kliniczne wymagają...", options:["kwalifikacji i bezpieczeństwa","dowolności bez zasad","braku monitorowania"], answer:0 },
+      { q:"Psychodeliki w terapii to temat...", options:["badany, wymagający ostrożności","całkowicie prosty i bez ryzyka","bez potrzeby dalszych badań"], answer:0 }
+    ],
+    "Angielski": [
+      { q:"Craving po polsku to...", options:["głód/chęć","ogród","ćwiczenie"], answer:0 },
+      { q:"Relapse oznacza...", options:["nawrót","nagrodę","odpoczynek"], answer:0 },
+      { q:"Coping skill oznacza...", options:["strategię radzenia sobie","rodzaj zwierzęcia","kolor"], answer:0 },
+      { q:"Trigger oznacza...", options:["wyzwalacz","terapeutę","sen"], answer:0 }
+    ],
+    "Szachy": [
+      { q:"Centrum szachownicy to najczęściej pola...", options:["e4, d4, e5, d5","a1, a8, h1, h8","tylko b2 i g7"], answer:0 },
+      { q:"Roszada pomaga...", options:["schować króla i połączyć wieże","zbić własnego pionka","zakończyć grę automatycznie"], answer:0 },
+      { q:"Skoczek porusza się...", options:["w kształcie litery L","tylko po skosie","jak wieża"], answer:0 },
+      { q:"Mat oznacza...", options:["król jest atakowany i nie ma legalnej obrony","zbicie hetmana","remis"], answer:0 }
+    ],
+    "Ogrodnictwo": [
+      { q:"Ściółka pomaga...", options:["ograniczyć parowanie i chronić glebę","wysuszyć glebę","usunąć całe mikrożycie"], answer:0 },
+      { q:"Kompost wpływa na...", options:["żyzność i strukturę gleby","kolor nieba","temperaturę telefonu"], answer:0 },
+      { q:"Rośliny dla zapylaczy powinny...", options:["kwitnąć w różnych terminach","być tylko plastikowe","nie mieć kwiatów"], answer:0 },
+      { q:"Retencja wody oznacza...", options:["zatrzymywanie wody w krajobrazie/glebie","szybkie odprowadzanie wszystkiego","podlewanie tylko betonu"], answer:0 }
+    ]
+  }
+};
+
+export const ACHIEVEMENTS = [
+  { id:"first100", icon:"💯", title:"Pierwsze 100 XP", description:"Zdobyto pierwsze 100 XP drużyny." },
+  { id:"firstLesson", icon:"🎓", title:"Pierwsza lekcja", description:"Pierwsza mikrolekcja ukończona." },
+  { id:"firstQuiz", icon:"🧩", title:"Pierwszy quiz", description:"Pierwszy quiz rozwiązany poprawnie." },
+  { id:"animalKeeper", icon:"🐾", title:"Opiekun stada", description:"Wykonano misję troski przy zwierzęciu." },
+  { id:"energyAware", icon:"🔋", title:"Obserwatorka energii", description:"Zapisano check-in energii." },
+  { id:"weeklyHero", icon:"🏆", title:"Bohater tygodnia", description:"Drużyna przekroczyła 500 XP." },
+  { id:"academyMaster", icon:"📚", title:"Mistrz Akademii", description:"Ukończono 5 lekcji." }
+];

@@ -15,3 +15,7 @@ input,select,textarea{border:3px solid #cbd5e1;border-radius:18px;padding:12px;b
 .animals{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}.animals button{font-size:30px;padding:9px;background:#fff}.locked{filter:grayscale(1);opacity:.5}.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:linear-gradient(135deg,#8b5cf6,#ec4899);color:white;padding:14px 18px;border-radius:22px;font-weight:950;box-shadow:0 18px 40px rgba(38,50,75,.25);z-index:999;animation:pop .25s ease}@keyframes pop{from{transform:translateX(-50%) scale(.8);opacity:.3}to{transform:translateX(-50%) scale(1);opacity:1}}
 nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);box-shadow:0 -10px 25px rgba(0,0,0,.13);display:flex;justify-content:center;z-index:99;overflow-x:auto;border-top:3px solid #fff}nav button{border:0;background:transparent;padding:10px 7px;min-width:62px;font-size:11px;color:#475569;font-weight:950;border-radius:0;margin:0;box-shadow:none}nav button.active{color:#7c3aed;background:#f5f3ff}
 @media(max-width:700px){.profiles,.grid,.grid3{grid-template-columns:1fr}.animals{grid-template-columns:repeat(4,1fr)}header h1{font-size:24px}}
+
+/* Aktualizacja 2.5 */
+.mini.done{border-color:#86efac;background:linear-gradient(135deg,#f0fdf4,#fff)}
+.mini.lockedAchievement{opacity:.65;filter:grayscale(.4)}
