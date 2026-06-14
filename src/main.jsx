@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, WEEKLY_REWARDS, PLACEMENT_TESTS, ACHIEVEMENTS, COMPANION_EVOLUTIONS, WORLD_CHAPTERS, GARDEN_VISITORS, STORY_MISSIONS, DISCOVERIES, ANIMAL_TRAIT_OPTIONS, ANIMAL_ACTIVITY_OPTIONS } from "./data/content.js";
+import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, WEEKLY_REWARDS, PLACEMENT_TESTS, ACHIEVEMENTS, COMPANION_EVOLUTIONS, WORLD_CHAPTERS, GARDEN_VISITORS, STORY_MISSIONS, DISCOVERIES, ANIMAL_TRAIT_OPTIONS, ANIMAL_ACTIVITY_OPTIONS, WORLD_LOCATIONS, LOCATION_MISSIONS } from "./data/content.js";
 import { db, hasFirebaseConfig, doc, onSnapshot, setDoc, serverTimestamp } from "./firebase.js";
 import "./styles.css";
 
@@ -9,7 +9,7 @@ const initialState = {
   xp:{zuza:0,lena:0,team:0}, streak:{zuza:0,lena:0},
   pets:{zuza:"🐉",lena:"🦊"}, themes:{zuza:"amethyst",lena:"pink"},
   tasks:{}, taskHistory:{}, weeklyAssignments:{}, weeklyKey:"",
-  completedLessons:{}, completedQuizzes:{}, placementResults:{}, placementDone:false, achievements:{}, companionEvolution:{zuza:1,lena:1}, companionRewards:{}, worldDiscoveries:{}, completedStoryMissions:{}, customAnimalProfiles:{}, selectedAnimalId:"arya", newTraitText:"", stats:{lessons:0, quizzes:0, animalCare:0}, emergency:false, journal:[],
+  completedLessons:{}, completedQuizzes:{}, placementResults:{}, placementDone:false, achievements:{}, companionEvolution:{zuza:1,lena:1}, companionRewards:{}, worldDiscoveries:{}, completedStoryMissions:{}, customAnimalProfiles:{}, selectedAnimalId:"arya", selectedLocationId:"home", completedLocationMissions:{}, newTraitText:"", stats:{lessons:0, quizzes:0, animalCare:0}, emergency:false, journal:[],
   checkins:{}, chronicle:[], weeklyGoal:{ name:"Pizza", xp:500, icon:"🍕" },
   rewards:[
     {name:"Lody / kakao",cost:50},{name:"Wspólny film",cost:100},{name:"Pizza",cost:250},{name:"Kawiarnia",cost:400},{name:"Kino",cost:1000},{name:"Restauracja",cost:1200},{name:"Park trampolin",cost:1500}
@@ -61,6 +61,7 @@ function App(){
   const [recommendation,setRecommendation]=useState("");
   const [selectedAnimalId,setSelectedAnimalId]=useState(state.selectedAnimalId || "arya");
   const [newTraitText,setNewTraitText]=useState("");
+  const [selectedLocationId,setSelectedLocationId]=useState(state.selectedLocationId || "home");
 
   const appDocRef=useMemo(()=>hasFirebaseConfig&&db?doc(db,"families","zuza-lenusia"):null,[]);
   useEffect(()=>{const go=()=>setOnline(navigator.onLine); window.addEventListener("online",go); window.addEventListener("offline",go); return()=>{window.removeEventListener("online",go); window.removeEventListener("offline",go)}},[]);
@@ -334,6 +335,35 @@ function App(){
     showToast(`🐾 ${animal.name}: więź +5`);
   }
 
+
+  function locationUnlocked(loc){
+    return (state.xp.team || 0) >= loc.unlockXp;
+  }
+
+  function locationProgress(loc){
+    const missions = LOCATION_MISSIONS[loc.id] || [];
+    const done = missions.filter((m,i)=>state.completedLocationMissions?.[`${loc.id}-${i}`]).length;
+    return missions.length ? Math.round((done/missions.length)*100) : 0;
+  }
+
+  function completeLocationMission(locId, index, mission){
+    const key = `${locId}-${index}`;
+    if(state.completedLocationMissions?.[key]){
+      showToast("Ta misja lokacji jest już zaliczona ✅");
+      return;
+    }
+    let next = structuredClone(state);
+    if(!next.completedLocationMissions) next.completedLocationMissions={};
+    next.completedLocationMissions[key] = { at:new Date().toLocaleString("pl-PL") };
+    next.xp.team += mission.xp;
+    next.selectedLocationId = locId;
+    next = addChronicle(next, `Misja lokacji ukończona: ${mission.title} (+${mission.xp} XP drużyny).`, "🗺️");
+    next=checkAchievements(next);
+    next=checkAllCompanions(next);
+    save(next);
+    showToast(`🗺️ Lokacja +${mission.xp} XP`);
+  }
+
   const gardenItems=["🌱","🌷","🌻","🌳","🦋","🐝","🍓","🌿","🌸","🍄","🪴","🌺"];
   const garden=Array.from({length:Math.min(18,level(state.xp.team)+4)},(_,i)=>gardenItems[i%gardenItems.length]).join(" ");
   const goal = state.weeklyGoal || initialState.weeklyGoal;
@@ -349,6 +379,7 @@ function App(){
         <section className="card row"><span className={`pill ${online?"online":"offline"}`}>{online?"☁️ internet jest":"📴 offline"}</span><span className={`pill ${cloudReady?"online":"offline"}`}>{hasFirebaseConfig?(cloudReady?"✅ baza działa":"łączę z bazą"):"Firebase niepodpięty"}</span><button className="warn" onClick={()=>save({...state,emergency:!state.emergency})}>🚨 Minimum ratunkowe</button><button className="blue" onClick={ensureWeek}>🎲 Podział tygodnia</button><button className="primary" onClick={pickNextMission}>⭐ Wybierz mi misję</button></section>
         {nextMission&&<section className="card"><h2>⭐ Następna dobra misja</h2><div className="task"><b>{ownerIcon(nextMission.assigned)} {nextMission.title}</b><p>{ownerLabel(nextMission.assigned)} · {nextMission.description}</p><button className="success" onClick={()=>finishTask(nextMission)}>Zrobione +{nextMission.xp} XP</button></div></section>}
         <section className="card storyPreview"><div className="row"><h2>🌌 Misje fabularne</h2><button className="blue" onClick={()=>setTab("world")}>Przejdź do świata</button></div>{unlockedStoryMissions().slice(0,2).map(m=><div className="questCard compact" key={m.id}><div className={`iconTile ${m.area.toLowerCase()}`}>{modernIcon(m.icon)}</div><div><b>{m.title}</b><p>{m.description}</p></div><button className="circleBtn" onClick={()=>completeStoryMission(m)}>{state.completedStoryMissions?.[m.id]?"✓":"○"}</button></div>)}</section>
+        <section className="card mapPreview"><div className="row"><h2>🗺️ Mapa Świata</h2><button className="blue" onClick={()=>setTab("map")}>Otwórz mapę</button></div><div className="locationMiniRow">{WORLD_LOCATIONS.slice(0,4).map(loc=><span key={loc.id} className={`pill ${locationUnlocked(loc)?"online":"offline"}`}>{loc.icon} {loc.name}</span>)}</div></section>
         <section className="profiles">{["zuza","lena"].map(p=><div className={`person ${p}`} key={p}><div className="row"><div><b>{ownerLabel(p)}</b><br/><span className="pill">Poziom {level(state.xp[p])}</span></div><div className="avatar">{state.pets[p]}</div></div><p>XP: <b>{state.xp[p]}</b> · Seria: <b>{state.streak[p]}</b></p><div className="progress"><div className="bar" style={{width:bar(state.xp[p])}} /></div></div>)}</section>
         <section className="grid">
           {["zuza","lena"].map(p=>{
@@ -407,7 +438,7 @@ function App(){
     </main>
 
     {toast&&<div className="toast">{toast}</div>}
-    <nav>{[["home","🏠","Start"],["tasks","✅","Misje"],["body","🏇","Ciało"],["learn","🧠","Nauka"],["energy","🔋","Energia"],["placement","🎯","Test"],["achievements","🏆","Odznaki"],["animals","🐾","Stado"],["chronicle","📖","Kronika"],["world","🌍","Świat"],["companions","🐉","Towarz."],["relations","❤️","Relacje"],["pets","🎨","Profil"]].map(([id,icon,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{icon}<br/>{label}</button>)}</nav>
+    <nav>{[["home","🏠","Start"],["tasks","✅","Misje"],["body","🏇","Ciało"],["learn","🧠","Nauka"],["energy","🔋","Energia"],["placement","🎯","Test"],["achievements","🏆","Odznaki"],["animals","🐾","Stado"],["chronicle","📖","Kronika"],["map","🗺️","Mapa"],["world","🌍","Świat"],["companions","🐉","Towarz."],["relations","❤️","Relacje"],["pets","🎨","Profil"]].map(([id,icon,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{icon}<br/>{label}</button>)}</nav>
   </div>
 }
 createRoot(document.getElementById("root")).render(<App/>);

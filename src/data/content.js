@@ -381,3 +381,40 @@ export const ANIMAL_ACTIVITY_OPTIONS = [
   "spacer","obserwacja","zabawa","głaskanie","trening","nauka","relacje","logika",
   "odpoczynek","misja ruchowa","misja jeździecka","misja akademii","misja troski"
 ];
+
+
+export const WORLD_LOCATIONS = [
+  { id:"home", icon:"⌂", name:"Dom Drużyny", unlockXp:0, description:"Centrum codziennych misji, relacji i spokojnego startu." },
+  { id:"garden", icon:"✿", name:"Ogród Pięciu Ścieżek", unlockXp:0, description:"Miejsce, gdzie rosną ścieżki Nauki, Zwierząt, Relacji, Jeździectwa i Logiki." },
+  { id:"stable", icon:"♞", name:"Stajnia Gai i Grafita", unlockXp:250, description:"Miejsce treningu, równowagi, odwagi i jeździeckich wyzwań." },
+  { id:"academy", icon:"▣", name:"Biblioteka Akademii", unlockXp:400, description:"Tutaj pojawiają się trudniejsze lekcje, quizy i testy poziomujące." },
+  { id:"forest", icon:"☾", name:"Las Odkrywców", unlockXp:750, description:"Tajemnicze miejsce zagadek, tropów i misji fabularnych." },
+  { id:"crystal", icon:"◆", name:"Kryształowa Polana", unlockXp:1200, description:"Miejsce specjalnych osiągnięć i dużych kroków w rozwoju drużyny." }
+];
+
+export const LOCATION_MISSIONS = {
+  home:[
+    { title:"Porządek startowy", text:"Wybierz jedną małą rzecz w domu i zrób ją do końca.", xp:20 },
+    { title:"Dobry komunikat", text:"Powiedz lub napisz komuś jedną życzliwą rzecz.", xp:20 }
+  ],
+  garden:[
+    { title:"Ścieżka dnia", text:"Wybierz jeden ogród rozwoju i wykonaj pasującą misję.", xp:25 },
+    { title:"Trop na mapie", text:"Zapisz w Kronice, co dziś udało się odkryć.", xp:25 }
+  ],
+  stable:[
+    { title:"Równowaga jeźdźca", text:"Zrób krótki trening stabilizacji albo rozciągania.", xp:30 },
+    { title:"Obserwacja konia", text:"Zanotuj jedną rzecz o Gai lub Graficie.", xp:30 }
+  ],
+  academy:[
+    { title:"Lekcja z sensem", text:"Zrób jedną lekcję i quiz z Akademii.", xp:35 },
+    { title:"Pytanie badacza", text:"Zapisz jedno pytanie, na które chcesz znać odpowiedź.", xp:30 }
+  ],
+  forest:[
+    { title:"Zagadka Lisa", text:"Rozwiąż łamigłówkę, szachy albo zadanie logiczne.", xp:40 },
+    { title:"Cichy trop", text:"Przez 3 minuty obserwuj coś bez telefonu.", xp:30 }
+  ],
+  crystal:[
+    { title:"Kryształ odwagi", text:"Wybierz jedną rzecz, której unikasz, i zrób pierwszy mały krok.", xp:50 },
+    { title:"Misja mistrzowska", text:"Połącz naukę, ruch i relacje w jednym dniu.", xp:60 }
+  ]
+};
