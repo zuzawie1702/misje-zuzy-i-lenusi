@@ -369,3 +369,15 @@ export const DISCOVERIES = [
   { id:"moon_leaf", xp:1200, icon:"leaf", title:"Księżycowy liść", description:"Liść, który świeci tylko po wykonaniu dobrej misji." },
   { id:"lost_scroll", xp:1800, icon:"scroll", title:"Fragment dziennika", description:"Część historii dawnego opiekuna ogrodu." }
 ];
+
+
+export const ANIMAL_TRAIT_OPTIONS = [
+  "odwaga","spokój","energia","ciekawość","logika","opieka","relacje","zabawa",
+  "uważność","ruch","nauka","wyzwania","cisza","współpraca","strategia","troska",
+  "humor","cierpliwość","samodzielność","wrażliwość","czujność","lojalność"
+];
+
+export const ANIMAL_ACTIVITY_OPTIONS = [
+  "spacer","obserwacja","zabawa","głaskanie","trening","nauka","relacje","logika",
+  "odpoczynek","misja ruchowa","misja jeździecka","misja akademii","misja troski"
+];

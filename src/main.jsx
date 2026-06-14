@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, WEEKLY_REWARDS, PLACEMENT_TESTS, ACHIEVEMENTS, COMPANION_EVOLUTIONS, WORLD_CHAPTERS, GARDEN_VISITORS, STORY_MISSIONS, DISCOVERIES } from "./data/content.js";
+import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, WEEKLY_REWARDS, PLACEMENT_TESTS, ACHIEVEMENTS, COMPANION_EVOLUTIONS, WORLD_CHAPTERS, GARDEN_VISITORS, STORY_MISSIONS, DISCOVERIES, ANIMAL_TRAIT_OPTIONS, ANIMAL_ACTIVITY_OPTIONS } from "./data/content.js";
 import { db, hasFirebaseConfig, doc, onSnapshot, setDoc, serverTimestamp } from "./firebase.js";
 import "./styles.css";
 
@@ -9,7 +9,7 @@ const initialState = {
   xp:{zuza:0,lena:0,team:0}, streak:{zuza:0,lena:0},
   pets:{zuza:"🐉",lena:"🦊"}, themes:{zuza:"amethyst",lena:"pink"},
   tasks:{}, taskHistory:{}, weeklyAssignments:{}, weeklyKey:"",
-  completedLessons:{}, completedQuizzes:{}, placementResults:{}, placementDone:false, achievements:{}, companionEvolution:{zuza:1,lena:1}, companionRewards:{}, worldDiscoveries:{}, completedStoryMissions:{}, stats:{lessons:0, quizzes:0, animalCare:0}, emergency:false, journal:[],
+  completedLessons:{}, completedQuizzes:{}, placementResults:{}, placementDone:false, achievements:{}, companionEvolution:{zuza:1,lena:1}, companionRewards:{}, worldDiscoveries:{}, completedStoryMissions:{}, customAnimalProfiles:{}, selectedAnimalId:"arya", newTraitText:"", stats:{lessons:0, quizzes:0, animalCare:0}, emergency:false, journal:[],
   checkins:{}, chronicle:[], weeklyGoal:{ name:"Pizza", xp:500, icon:"🍕" },
   rewards:[
     {name:"Lody / kakao",cost:50},{name:"Wspólny film",cost:100},{name:"Pizza",cost:250},{name:"Kawiarnia",cost:400},{name:"Kino",cost:1000},{name:"Restauracja",cost:1200},{name:"Park trampolin",cost:1500}
@@ -59,6 +59,8 @@ function App(){
   const [testArea,setTestArea]=useState("Weterynaria");
   const [testAnswers,setTestAnswers]=useState({});
   const [recommendation,setRecommendation]=useState("");
+  const [selectedAnimalId,setSelectedAnimalId]=useState(state.selectedAnimalId || "arya");
+  const [newTraitText,setNewTraitText]=useState("");
 
   const appDocRef=useMemo(()=>hasFirebaseConfig&&db?doc(db,"families","zuza-lenusia"):null,[]);
   useEffect(()=>{const go=()=>setOnline(navigator.onLine); window.addEventListener("online",go); window.addEventListener("offline",go); return()=>{window.removeEventListener("online",go); window.removeEventListener("offline",go)}},[]);
@@ -264,6 +266,74 @@ function App(){
     return `${unlocked} / ${WORLD_CHAPTERS.length}`;
   }
 
+
+  function animalProfile(animal){
+    const custom = state.customAnimalProfiles?.[animal.id] || {};
+    return {
+      ...animal,
+      traits: custom.traits || animal.traits || [],
+      activities: custom.activities || [],
+      note: custom.note || "",
+      bond: custom.bond || 0
+    };
+  }
+
+  function updateAnimalProfile(id, patch){
+    let next = structuredClone(state);
+    if(!next.customAnimalProfiles) next.customAnimalProfiles={};
+    const baseAnimal = REAL_ANIMALS.find(a=>a.id===id);
+    const current = animalProfile(baseAnimal);
+    next.customAnimalProfiles[id] = {...current, ...(next.customAnimalProfiles[id]||{}), ...patch};
+    next.selectedAnimalId = id;
+    next = addChronicle(next, `Zaktualizowano profil zwierzęcia: ${baseAnimal?.name || id}.`, "🐾");
+    save(next);
+    showToast("🐾 Profil stada zapisany");
+  }
+
+  function toggleAnimalTrait(id, trait){
+    const animal = REAL_ANIMALS.find(a=>a.id===id);
+    const profile = animalProfile(animal);
+    const traits = profile.traits.includes(trait)
+      ? profile.traits.filter(t=>t!==trait)
+      : [...profile.traits, trait];
+    updateAnimalProfile(id,{traits});
+  }
+
+  function addCustomTrait(id){
+    const trait = newTraitText.trim().toLowerCase();
+    if(!trait){ showToast("Wpisz cechę"); return; }
+    const animal = REAL_ANIMALS.find(a=>a.id===id);
+    const profile = animalProfile(animal);
+    const traits = profile.traits.includes(trait) ? profile.traits : [...profile.traits, trait];
+    setNewTraitText("");
+    updateAnimalProfile(id,{traits});
+  }
+
+  function toggleAnimalActivity(id, activity){
+    const animal = REAL_ANIMALS.find(a=>a.id===id);
+    const profile = animalProfile(animal);
+    const activities = profile.activities.includes(activity)
+      ? profile.activities.filter(a=>a!==activity)
+      : [...profile.activities, activity];
+    updateAnimalProfile(id,{activities});
+  }
+
+  function animalBondMission(id){
+    const animal = REAL_ANIMALS.find(a=>a.id===id);
+    const profile = animalProfile(animal);
+    let next = structuredClone(state);
+    if(!next.customAnimalProfiles) next.customAnimalProfiles={};
+    next.customAnimalProfiles[id] = {...profile, bond: Math.min(100,(profile.bond||0)+5)};
+    next.xp.team += 12;
+    if(!next.stats) next.stats={lessons:0,quizzes:0,animalCare:0};
+    next.stats.animalCare=(next.stats.animalCare||0)+1;
+    next = addChronicle(next, `Misja więzi ze zwierzęciem: ${animal.name}. Więź +5, drużyna +12 XP.`, "🐾");
+    next=checkAchievements(next);
+    next=checkAllCompanions(next);
+    save(next);
+    showToast(`🐾 ${animal.name}: więź +5`);
+  }
+
   const gardenItems=["🌱","🌷","🌻","🌳","🦋","🐝","🍓","🌿","🌸","🍄","🪴","🌺"];
   const garden=Array.from({length:Math.min(18,level(state.xp.team)+4)},(_,i)=>gardenItems[i%gardenItems.length]).join(" ");
   const goal = state.weeklyGoal || initialState.weeklyGoal;
@@ -303,7 +373,7 @@ function App(){
 
       {tab==="energy"&&<section className="card"><h2>🔋 Energia i samopoczucie</h2><p>Check-in 3 razy dziennie. Wystarczy kliknąć jedną linię.</p>{["rano","popołudnie","wieczór"].map(t=><div className="task" key={t}><h3>{t==="rano"?"🌅":t==="popołudnie"?"☀️":"🌙"} {t}</h3><div className="grid3"><button onClick={()=>addCheckin(t,"dobrze","dużo","mało")}>😊 🔋 dużo 🌿 spokojnie</button><button onClick={()=>addCheckin(t,"tak sobie","średnio","średnio")}>😐 🔋 średnio ⚖️ trochę</button><button onClick={()=>addCheckin(t,"słabo","mało","dużo")}>😔 🔋 mało 🌪️ za dużo</button></div></div>)}</section>}
 
-      {tab==="animals"&&<section className="card"><h2>🐾 Nasze stado</h2><div className="grid">{REAL_ANIMALS.map(a=><div className="mini" key={a.id}><h3>{a.icon} {a.name}</h3><p>{a.species} · {a.sex}</p><p>{a.traits.map(t=><span className="pill" key={t}>{t}</span>)}</p><button className="success" onClick={()=>customXp("team",10,`Opieka: ${a.name}`)}>Misja troski +10 XP</button></div>)}</div></section>}
+      {tab==="animals"&&<section className="card"><h2>🐾 Nasze stado</h2><p>Tu możesz samodzielnie ustawić charakter, cechy, ulubione aktywności i więź każdego zwierzęcia.</p><div className="animalEditorLayout"><div className="animalList">{REAL_ANIMALS.map(a=>{const p=animalProfile(a);return <button key={a.id} className={`animalSelect ${selectedAnimalId===a.id?"active":""}`} onClick={()=>{setSelectedAnimalId(a.id); save({...state,selectedAnimalId:a.id})}}><span>{a.icon}</span><b>{a.name}</b><small>{p.traits.slice(0,2).join(", ")}</small></button>})}</div><div className="animalEditPanel">{(()=>{const animal=REAL_ANIMALS.find(a=>a.id===selectedAnimalId)||REAL_ANIMALS[0]; const p=animalProfile(animal); return <><div className="row"><div><h3>{animal.icon} {animal.name}</h3><p>{animal.species} · {animal.sex}</p></div><span className="pill">Więź {p.bond || 0}/100</span></div><div className="progress"><div className="bar" style={{width:`${p.bond||0}%`}} /></div><h4>Cechy charakteru</h4><div className="chipGrid">{ANIMAL_TRAIT_OPTIONS.map(t=><button key={t} className={p.traits.includes(t)?"chip active":"chip"} onClick={()=>toggleAnimalTrait(animal.id,t)}>{t}</button>)}</div><div className="grid"><input value={newTraitText} onChange={e=>setNewTraitText(e.target.value)} placeholder="Dopisz własną cechę"/><button className="blue" onClick={()=>addCustomTrait(animal.id)}>Dodaj cechę</button></div><h4>Ulubione aktywności</h4><div className="chipGrid">{ANIMAL_ACTIVITY_OPTIONS.map(t=><button key={t} className={p.activities.includes(t)?"chip active":"chip"} onClick={()=>toggleAnimalActivity(animal.id,t)}>{t}</button>)}</div><h4>Notatka o zwierzęciu</h4><textarea value={p.note} onChange={e=>updateAnimalProfile(animal.id,{note:e.target.value})} placeholder="Np. co lubi, czego nie lubi, kiedy potrzebuje spokoju..."/><button className="success" onClick={()=>animalBondMission(animal.id)}>Misja więzi +12 XP</button></>})()}</div></div></section>}
 
       {tab==="chronicle"&&<section className="card"><h2>📖 Kronika Stada</h2><p>Tu zapisują się ważne momenty: misje, lekcje, quizy, check-iny i wydarzenia.</p><div className="chronicle">{(state.chronicle||[]).length===0?<div className="mini">Jeszcze pusto. Wykonaj misję albo lekcję, a pojawi się pierwszy wpis.</div>:(state.chronicle||[]).map((c,i)=><div className="mini" key={i}><span className="pill">{c.icon} {c.date}</span><p>{c.text}</p></div>)}</div></section>}
 
