@@ -418,3 +418,76 @@ export const LOCATION_MISSIONS = {
     { title:"Misja mistrzowska", text:"Połącz naukę, ruch i relacje w jednym dniu.", xp:60 }
   ]
 };
+
+
+export const RELATION_LEVELS = [
+  { min:0, name:"Znajomość", icon:"◇", description:"Pierwszy kontakt i spokojne poznawanie." },
+  { min:20, name:"Przyjaciel", icon:"✦", description:"Relacja zaczyna dawać poczucie wsparcia." },
+  { min:40, name:"Zaufanie", icon:"◆", description:"Można odblokować pierwsze specjalne historie." },
+  { min:70, name:"Partner Przygód", icon:"✧", description:"Relacja daje bonusy i mocniejsze misje." },
+  { min:100, name:"Legenda Stada", icon:"★", description:"Najwyższy poziom więzi w tej wersji." }
+];
+
+export const RELATION_PAIRS = [
+  { id:"zuza-dragon", owner:"zuza", targetType:"companion", targetId:"dragon", title:"Zuza ↔ Smok", icon:"🐉", description:"Relacja działania, wiedzy, odwagi i smoczego ognia." },
+  { id:"lena-fox", owner:"lena", targetType:"companion", targetId:"fox", title:"Lena ↔ Lis", icon:"🦊", description:"Relacja ciekawości, logiki, weterynarii i odkrywania." },
+  { id:"zuza-gaja", owner:"zuza", targetType:"animal", targetId:"gaja", title:"Zuza ↔ Gaja", icon:"🐴", description:"Relacja równowagi, spokoju, dosiadu i uważności." },
+  { id:"zuza-grafit", owner:"zuza", targetType:"animal", targetId:"grafit", title:"Zuza ↔ Grafit", icon:"🐴", description:"Relacja odwagi, treningu i przełamywania trudności." },
+  { id:"lena-arya", owner:"lena", targetType:"animal", targetId:"arya", title:"Lena ↔ Arya", icon:"🐕", description:"Relacja troski, opieki, spacerów i wspólnej obecności." },
+  { id:"lena-lily", owner:"lena", targetType:"animal", targetId:"lily", title:"Lena ↔ Lily", icon:"🐕", description:"Relacja delikatności, emocji i spokojnego kontaktu." },
+  { id:"team-coco", owner:"team", targetType:"animal", targetId:"coco", title:"Drużyna ↔ Coco", icon:"🐕", description:"Relacja energii, ruchu i codziennych rytuałów." },
+  { id:"team-bagheera", owner:"team", targetType:"animal", targetId:"bagheera", title:"Drużyna ↔ Bagheera", icon:"🐈‍⬛", description:"Relacja ciszy, obserwacji i szacunku do granic." },
+  { id:"team-darwin", owner:"team", targetType:"animal", targetId:"darwin", title:"Drużyna ↔ Darwin", icon:"🐈", description:"Relacja nauki, ciekawości i logicznego myślenia." },
+  { id:"team-gumball", owner:"team", targetType:"animal", targetId:"gumball", title:"Drużyna ↔ Gumball", icon:"🐈", description:"Relacja zabawy, humoru i niespodzianek." }
+];
+
+export const RELATION_GIFTS = [
+  { id:"treat", icon:"✦", name:"Przysmak", description:"Dobry prezent po misji troski.", value:5 },
+  { id:"feather", icon:"⌁", name:"Pióro uważności", description:"Prezent za spokój, obserwację i ciszę.", value:8 },
+  { id:"crystal", icon:"◆", name:"Kryształ odwagi", description:"Prezent za trudniejszą misję.", value:10 },
+  { id:"badge", icon:"★", name:"Odznaka stada", description:"Prezent za wspólne działanie.", value:12 },
+  { id:"scroll", icon:"☉", name:"Zwój wiedzy", description:"Prezent za naukę albo quiz.", value:8 }
+];
+
+export const ANIMAL_STORIES = {
+  arya:[
+    { bond:10, title:"Trop Aryi", text:"Arya zatrzymała się przy granicy Lasu Odkrywców. Coś wyczuła, ale zamiast szczekać, spojrzała na Lenę, jakby czekała na wspólną decyzję." },
+    { bond:35, title:"Cichy strażnik", text:"Arya zaczęła pojawiać się przy misjach relacji. Jej obecność przypomina, że odwaga czasem oznacza spokojne bycie obok." },
+    { bond:70, title:"Przysięga tropicielki", text:"Arya odnalazła ślad prowadzący do kolejnej lokacji mapy. Drużyna zyskuje nową strażniczkę ścieżek." }
+  ],
+  lily:[
+    { bond:10, title:"Delikatny znak Lily", text:"Lily położyła głowę blisko dłoni i pokazała, że czasem najważniejsza misja to cisza, spokój i łagodność." },
+    { bond:35, title:"Most emocji", text:"Lily pomaga rozpoznawać napięcie i odpoczynek. Jej historia wzmacnia Ogród Relacji." },
+    { bond:70, title:"Serce stada", text:"Lily odblokowuje specjalną misję wdzięczności i uważnego kontaktu." }
+  ],
+  coco:[
+    { bond:10, title:"Energia Coco", text:"Coco nie przynosi odpowiedzi, ale przynosi ruch. Czasem najlepszym początkiem jest wstać i zrobić pierwszy krok." },
+    { bond:35, title:"Rytm spaceru", text:"Coco prowadzi drużynę przez misję ruchową. Każdy krok dodaje energii." },
+    { bond:70, title:"Strażnik aktywności", text:"Coco odblokowuje bonus dla zadań ruchowych i misji domowych." }
+  ],
+  bagheera:[
+    { bond:10, title:"Cień Bagheery", text:"Bagheera obserwuje wszystko z dystansu. Uczy, że relacja nie zawsze oznacza bliskość na siłę." },
+    { bond:35, title:"Lekcja granic", text:"Bagheera odblokowuje historię o szacunku do przestrzeni i sygnałów zwierzęcia." },
+    { bond:70, title:"Strażnik ciszy", text:"Bagheera pomaga w misjach regeneracyjnych i spokojnych check-inach." }
+  ],
+  darwin:[
+    { bond:10, title:"Pytanie Darwina", text:"Darwin znalazł miejsce przy mapie, jakby sprawdzał, czy da się ją rozwiązać jak zagadkę." },
+    { bond:35, title:"Kot naukowiec", text:"Darwin odblokowuje specjalną zagadkę logiczną." },
+    { bond:70, title:"Mistrz hipotez", text:"Darwin pomaga przy Akademii i quizach." }
+  ],
+  gumball:[
+    { bond:10, title:"Niespodzianka Gumballa", text:"Gumball pojawia się tam, gdzie nikt go nie szukał. Przypomina, że zabawa też jest częścią energii." },
+    { bond:35, title:"Misja chaosu", text:"Gumball odblokowuje krótką misję humoru i rozluźnienia." },
+    { bond:70, title:"Koci trik", text:"Gumball wzmacnia łamigłówki i misje kreatywne." }
+  ],
+  gaja:[
+    { bond:10, title:"Oddech Gai", text:"Gaja stoi spokojnie przy ścieżce do Kryształowej Polany. Jej historia zaczyna się od równowagi." },
+    { bond:35, title:"Ścieżka dosiadu", text:"Gaja odblokowuje misję jeździecką skupioną na stabilizacji i oddechu." },
+    { bond:70, title:"Klacz równowagi", text:"Gaja prowadzi drużynę do misji uważności i kontroli ciała." }
+  ],
+  grafit:[
+    { bond:10, title:"Krok Grafita", text:"Grafit rusza dopiero wtedy, gdy drużyna jest gotowa. Jego historia zaczyna się od odwagi." },
+    { bond:35, title:"Próba wyzwania", text:"Grafit odblokowuje misję trudniejszego kroku." },
+    { bond:70, title:"Siła stada", text:"Grafit wzmacnia misje wymagające konsekwencji i wytrwałości." }
+  ]
+};

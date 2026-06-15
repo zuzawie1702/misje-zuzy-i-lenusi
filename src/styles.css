@@ -161,3 +161,26 @@ nav button.active{background:linear-gradient(135deg,#7c3aed,#db2777);color:#fff;
   .mapHero h2{font-size:30px}
   .mapCompass{font-size:48px;right:18px;top:18px}
 }
+
+
+/* Aktualizacja 3.1 — Relacje i Więzi */
+.relationPreview{border-color:rgba(244,114,182,.38)}
+.relationMiniRow{display:flex;flex-wrap:wrap;gap:8px}
+.relationLayout{display:grid;grid-template-columns:300px 1fr;gap:16px}
+.relationList{display:grid;gap:10px;align-content:start}
+.relationSelect{
+  display:grid;grid-template-columns:42px 1fr;gap:6px;align-items:center;text-align:left;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:12px;color:#fff
+}
+.relationSelect span{font-size:30px;grid-row:1/3}
+.relationSelect small{color:#cbd5e1}
+.relationSelect.active{background:linear-gradient(135deg,rgba(219,39,119,.50),rgba(124,58,237,.35));border-color:#f0abfc}
+.relationPanel{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:16px}
+.giftGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:10px 0 16px}
+.giftCard{min-height:112px;border-radius:18px;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center}
+.giftCard span{font-size:30px}.giftCard small{color:#cbd5e1}
+@media(max-width:760px){
+  .relationLayout{grid-template-columns:1fr}
+  .relationList{grid-template-columns:1fr}
+  .giftGrid{grid-template-columns:repeat(2,1fr)}
+}

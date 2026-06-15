@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, WEEKLY_REWARDS, PLACEMENT_TESTS, ACHIEVEMENTS, COMPANION_EVOLUTIONS, WORLD_CHAPTERS, GARDEN_VISITORS, STORY_MISSIONS, DISCOVERIES, ANIMAL_TRAIT_OPTIONS, ANIMAL_ACTIVITY_OPTIONS, WORLD_LOCATIONS, LOCATION_MISSIONS } from "./data/content.js";
+import { TASKS, WORKOUTS, LESSONS, FAMILY_EVENTS, REAL_ANIMALS, PETS, THEMES, WEEKLY_REWARDS, PLACEMENT_TESTS, ACHIEVEMENTS, COMPANION_EVOLUTIONS, WORLD_CHAPTERS, GARDEN_VISITORS, STORY_MISSIONS, DISCOVERIES, ANIMAL_TRAIT_OPTIONS, ANIMAL_ACTIVITY_OPTIONS, WORLD_LOCATIONS, LOCATION_MISSIONS, RELATION_LEVELS, RELATION_PAIRS, RELATION_GIFTS, ANIMAL_STORIES } from "./data/content.js";
 import { db, hasFirebaseConfig, doc, onSnapshot, setDoc, serverTimestamp } from "./firebase.js";
 import "./styles.css";
 
@@ -9,7 +9,7 @@ const initialState = {
   xp:{zuza:0,lena:0,team:0}, streak:{zuza:0,lena:0},
   pets:{zuza:"🐉",lena:"🦊"}, themes:{zuza:"amethyst",lena:"pink"},
   tasks:{}, taskHistory:{}, weeklyAssignments:{}, weeklyKey:"",
-  completedLessons:{}, completedQuizzes:{}, placementResults:{}, placementDone:false, achievements:{}, companionEvolution:{zuza:1,lena:1}, companionRewards:{}, worldDiscoveries:{}, completedStoryMissions:{}, customAnimalProfiles:{}, selectedAnimalId:"arya", selectedLocationId:"home", completedLocationMissions:{}, newTraitText:"", stats:{lessons:0, quizzes:0, animalCare:0}, emergency:false, journal:[],
+  completedLessons:{}, completedQuizzes:{}, placementResults:{}, placementDone:false, achievements:{}, companionEvolution:{zuza:1,lena:1}, companionRewards:{}, worldDiscoveries:{}, completedStoryMissions:{}, customAnimalProfiles:{}, selectedAnimalId:"arya", selectedRelationId:"zuza-dragon", selectedLocationId:"home", completedLocationMissions:{}, relationPoints:{}, relationGifts:{}, unlockedAnimalStories:{}, newTraitText:"", stats:{lessons:0, quizzes:0, animalCare:0}, emergency:false, journal:[],
   checkins:{}, chronicle:[], weeklyGoal:{ name:"Pizza", xp:500, icon:"🍕" },
   rewards:[
     {name:"Lody / kakao",cost:50},{name:"Wspólny film",cost:100},{name:"Pizza",cost:250},{name:"Kawiarnia",cost:400},{name:"Kino",cost:1000},{name:"Restauracja",cost:1200},{name:"Park trampolin",cost:1500}
@@ -62,6 +62,7 @@ function App(){
   const [selectedAnimalId,setSelectedAnimalId]=useState(state.selectedAnimalId || "arya");
   const [newTraitText,setNewTraitText]=useState("");
   const [selectedLocationId,setSelectedLocationId]=useState(state.selectedLocationId || "home");
+  const [selectedRelationId,setSelectedRelationId]=useState(state.selectedRelationId || "zuza-dragon");
 
   const appDocRef=useMemo(()=>hasFirebaseConfig&&db?doc(db,"families","zuza-lenusia"):null,[]);
   useEffect(()=>{const go=()=>setOnline(navigator.onLine); window.addEventListener("online",go); window.addEventListener("offline",go); return()=>{window.removeEventListener("online",go); window.removeEventListener("offline",go)}},[]);
@@ -364,6 +365,74 @@ function App(){
     showToast(`🗺️ Lokacja +${mission.xp} XP`);
   }
 
+
+  function relationValue(id){
+    const pair = RELATION_PAIRS.find(p=>p.id===id);
+    if(pair?.targetType === "animal"){
+      const animal = REAL_ANIMALS.find(a=>a.id===pair.targetId);
+      return animal ? (animalProfile(animal).bond || 0) : 0;
+    }
+    return state.relationPoints?.[id] || 0;
+  }
+
+  function relationLevelName(value){
+    return RELATION_LEVELS.slice().reverse().find(l=>value>=l.min) || RELATION_LEVELS[0];
+  }
+
+  function addRelationPoints(id, amount, reason="misja relacji"){
+    const pair = RELATION_PAIRS.find(p=>p.id===id);
+    let next = structuredClone(state);
+    if(pair?.targetType === "animal"){
+      const animal = REAL_ANIMALS.find(a=>a.id===pair.targetId);
+      const profile = animalProfile(animal);
+      if(!next.customAnimalProfiles) next.customAnimalProfiles={};
+      next.customAnimalProfiles[pair.targetId] = {...profile, bond: Math.min(100,(profile.bond||0)+amount)};
+    } else {
+      if(!next.relationPoints) next.relationPoints={};
+      next.relationPoints[id] = Math.min(100,(next.relationPoints[id]||0)+amount);
+    }
+    next.xp.team += Math.ceil(amount/2);
+    next = addChronicle(next, `Relacja ${pair?.title || id}: +${amount} więzi za ${reason}.`, "❤️");
+    next=checkAchievements(next);
+    next=checkAllCompanions(next);
+    save(next);
+    showToast(`❤️ Więź +${amount}`);
+  }
+
+  function giveRelationGift(id, gift){
+    const pair = RELATION_PAIRS.find(p=>p.id===id);
+    let next = structuredClone(state);
+    if(!next.relationGifts) next.relationGifts={};
+    if(!next.relationGifts[id]) next.relationGifts[id]=[];
+    next.relationGifts[id].push({giftId:gift.id, at:new Date().toLocaleString("pl-PL")});
+    if(pair?.targetType === "animal"){
+      const animal = REAL_ANIMALS.find(a=>a.id===pair.targetId);
+      const profile = animalProfile(animal);
+      if(!next.customAnimalProfiles) next.customAnimalProfiles={};
+      next.customAnimalProfiles[pair.targetId] = {...profile, bond: Math.min(100,(profile.bond||0)+gift.value)};
+    } else {
+      if(!next.relationPoints) next.relationPoints={};
+      next.relationPoints[id] = Math.min(100,(next.relationPoints[id]||0)+gift.value);
+    }
+    next = addChronicle(next, `Prezent dla relacji ${pair?.title || id}: ${gift.name}.`, "🎁");
+    save(next);
+    showToast(`🎁 ${gift.name}: więź +${gift.value}`);
+  }
+
+  function storiesForRelation(pair){
+    if(pair?.targetType !== "animal") return [];
+    return ANIMAL_STORIES[pair.targetId] || [];
+  }
+
+  function relationSpecialMission(pair){
+    const value = relationValue(pair.id);
+    const lvl = relationLevelName(value).name;
+    if(value < 20) return "Wykonaj krótką misję obecności: 3 minuty spokojnego kontaktu albo obserwacji.";
+    if(value < 40) return "Zrób misję troski i zapisz jedną obserwację w Kronice.";
+    if(value < 70) return "Wybierz aktywność pasującą do cech tej relacji i dodaj notatkę.";
+    return `Misja poziomu ${lvl}: połącz troskę, naukę i wspólną obecność.`;
+  }
+
   const gardenItems=["🌱","🌷","🌻","🌳","🦋","🐝","🍓","🌿","🌸","🍄","🪴","🌺"];
   const garden=Array.from({length:Math.min(18,level(state.xp.team)+4)},(_,i)=>gardenItems[i%gardenItems.length]).join(" ");
   const goal = state.weeklyGoal || initialState.weeklyGoal;
@@ -380,6 +449,7 @@ function App(){
         {nextMission&&<section className="card"><h2>⭐ Następna dobra misja</h2><div className="task"><b>{ownerIcon(nextMission.assigned)} {nextMission.title}</b><p>{ownerLabel(nextMission.assigned)} · {nextMission.description}</p><button className="success" onClick={()=>finishTask(nextMission)}>Zrobione +{nextMission.xp} XP</button></div></section>}
         <section className="card storyPreview"><div className="row"><h2>🌌 Misje fabularne</h2><button className="blue" onClick={()=>setTab("world")}>Przejdź do świata</button></div>{unlockedStoryMissions().slice(0,2).map(m=><div className="questCard compact" key={m.id}><div className={`iconTile ${m.area.toLowerCase()}`}>{modernIcon(m.icon)}</div><div><b>{m.title}</b><p>{m.description}</p></div><button className="circleBtn" onClick={()=>completeStoryMission(m)}>{state.completedStoryMissions?.[m.id]?"✓":"○"}</button></div>)}</section>
         <section className="card mapPreview"><div className="row"><h2>🗺️ Mapa Świata</h2><button className="blue" onClick={()=>setTab("map")}>Otwórz mapę</button></div><div className="locationMiniRow">{WORLD_LOCATIONS.slice(0,4).map(loc=><span key={loc.id} className={`pill ${locationUnlocked(loc)?"online":"offline"}`}>{loc.icon} {loc.name}</span>)}</div></section>
+        <section className="card relationPreview"><div className="row"><h2>❤️ Relacje i więzi</h2><button className="blue" onClick={()=>setTab("relationsRpg")}>Otwórz relacje</button></div><div className="relationMiniRow">{RELATION_PAIRS.slice(0,4).map(pair=><span key={pair.id} className="pill">{pair.icon} {pair.title}: {relationLevelName(relationValue(pair.id)).name}</span>)}</div></section>
         <section className="profiles">{["zuza","lena"].map(p=><div className={`person ${p}`} key={p}><div className="row"><div><b>{ownerLabel(p)}</b><br/><span className="pill">Poziom {level(state.xp[p])}</span></div><div className="avatar">{state.pets[p]}</div></div><p>XP: <b>{state.xp[p]}</b> · Seria: <b>{state.streak[p]}</b></p><div className="progress"><div className="bar" style={{width:bar(state.xp[p])}} /></div></div>)}</section>
         <section className="grid">
           {["zuza","lena"].map(p=>{
@@ -434,11 +504,15 @@ function App(){
       {tab==="achievements"&&<section className="card"><h2>🏆 Osiągnięcia</h2><p>Odznaki za pierwsze sukcesy i regularność.</p><div className="grid">{ACHIEVEMENTS.map(a=><div className={`mini ${state.achievements?.[a.id]?"done":""}`} key={a.id}><h3>{a.icon} {a.title}</h3><p>{a.description}</p><span className="pill">{state.achievements?.[a.id] ? "Odblokowane" : "Jeszcze zablokowane"}</span></div>)}</div></section>}
 
 
+      
+      {tab==="relationsRpg"&&<section className="card relationsScreen"><h2>❤️ Relacje i Więzi</h2><p>Relacje odblokowują historie, misje specjalne i bonusy. Zwierzęta korzystają z poziomu więzi z edytora Stada.</p><div className="relationLayout"><div className="relationList">{RELATION_PAIRS.map(pair=>{const val=relationValue(pair.id); const lvl=relationLevelName(val); return <button key={pair.id} className={`relationSelect ${selectedRelationId===pair.id?"active":""}`} onClick={()=>{setSelectedRelationId(pair.id); save({...state,selectedRelationId:pair.id})}}><span>{pair.icon}</span><b>{pair.title}</b><small>{lvl.icon} {lvl.name} · {val}/100</small></button>})}</div><div className="relationPanel">{(()=>{const pair=RELATION_PAIRS.find(p=>p.id===selectedRelationId)||RELATION_PAIRS[0]; const val=relationValue(pair.id); const lvl=relationLevelName(val); const stories=storiesForRelation(pair); return <><div className="row"><div><h3>{pair.icon} {pair.title}</h3><p>{pair.description}</p></div><span className="pill">{lvl.icon} {lvl.name}</span></div><div className="progress"><div className="bar" style={{width:`${val}%`}} /></div><p><b>Poziom więzi:</b> {val}/100 · {lvl.description}</p><div className="mini"><h4>Misja specjalna</h4><p>{relationSpecialMission(pair)}</p><button className="success" onClick={()=>addRelationPoints(pair.id,8,"misję specjalną")}>Wykonane +8 więzi</button></div><h4>Prezenty</h4><div className="giftGrid">{RELATION_GIFTS.map(g=><button key={g.id} className="giftCard" onClick={()=>giveRelationGift(pair.id,g)}><span>{g.icon}</span><b>{g.name}</b><small>+{g.value} więzi</small></button>)}</div><h4>Historie relacji</h4>{stories.length===0?<div className="mini">Ta relacja nie ma jeszcze osobnej historii zwierzęcia. Będzie rozwijana w kolejnych wersjach.</div>:stories.map(s=><div className={`mini ${val>=s.bond?"done":"locked"}`} key={s.title}><b>{val>=s.bond?"✓":"🔒"} {s.title}</b><p>{val>=s.bond?s.text:`Odblokowanie przy więzi ${s.bond}/100.`}</p></div>)}</>})()}</div></div></section>}
+
+
       {tab==="relations"&&<section className="card"><h2>❤️ Emocje i relacje</h2><textarea value={journalText} onChange={e=>setJournalText(e.target.value)} placeholder="Jedno zdanie wystarczy: dziś czułam... potrzebowałam..."/><button className="success" onClick={addJournal}>Zapisz wpis +10 XP</button>{state.journal.slice(0,5).map((j,i)=><div className="mini" key={i}><span className="pill">{ownerLabel(j.person)} · {j.date}</span><p>{j.text}</p></div>)}</section>}
     </main>
 
     {toast&&<div className="toast">{toast}</div>}
-    <nav>{[["home","🏠","Start"],["tasks","✅","Misje"],["body","🏇","Ciało"],["learn","🧠","Nauka"],["energy","🔋","Energia"],["placement","🎯","Test"],["achievements","🏆","Odznaki"],["animals","🐾","Stado"],["chronicle","📖","Kronika"],["map","🗺️","Mapa"],["world","🌍","Świat"],["companions","🐉","Towarz."],["relations","❤️","Relacje"],["pets","🎨","Profil"]].map(([id,icon,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{icon}<br/>{label}</button>)}</nav>
+    <nav>{[["home","🏠","Start"],["tasks","✅","Misje"],["body","🏇","Ciało"],["learn","🧠","Nauka"],["energy","🔋","Energia"],["placement","🎯","Test"],["achievements","🏆","Odznaki"],["animals","🐾","Stado"],["chronicle","📖","Kronika"],["map","🗺️","Mapa"],["world","🌍","Świat"],["companions","🐉","Towarz."],["relationsRpg","❤️","Więzi"],["relations","✎","Dziennik"],["pets","🎨","Profil"]].map(([id,icon,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{icon}<br/>{label}</button>)}</nav>
   </div>
 }
 createRoot(document.getElementById("root")).render(<App/>);
