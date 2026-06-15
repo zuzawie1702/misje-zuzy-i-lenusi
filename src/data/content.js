@@ -491,3 +491,35 @@ export const ANIMAL_STORIES = {
     { bond:70, title:"Siła stada", text:"Grafit wzmacnia misje wymagające konsekwencji i wytrwałości." }
   ]
 };
+
+
+export const INVENTORY_ITEMS = [
+  { id:"courage_crystal", icon:"◆", name:"Kryształ odwagi", rarity:"rzadki", type:"kryształ", description:"Wzmacnia misje, które wymagają pierwszego kroku mimo oporu." },
+  { id:"owl_feather", icon:"⌁", name:"Pióro Strażniczki", rarity:"niezwykły", type:"pióro", description:"Wzmacnia obserwację, uważność i spokojne decyzje." },
+  { id:"fox_compass", icon:"◇", name:"Kompas Lisa", rarity:"rzadki", type:"narzędzie", description:"Pomaga wybierać zagadki i tropy na mapie." },
+  { id:"dragon_flame", icon:"ϟ", name:"Iskra Smoka", rarity:"epicki", type:"moc", description:"Wzmacnia trudniejsze misje i działania wymagające energii." },
+  { id:"study_scroll", icon:"☉", name:"Zwój Wiedzy", rarity:"niezwykły", type:"zwój", description:"Pojawia się po lekcjach i quizach." },
+  { id:"stable_token", icon:"♞", name:"Znak Stajni", rarity:"niezwykły", type:"odznaka", description:"Nagroda za trening i zadania jeździeckie." },
+  { id:"heart_gem", icon:"♡", name:"Kamień Relacji", rarity:"rzadki", type:"klejnot", description:"Wzmacnia więzi, rozmowy i misje relacyjne." },
+  { id:"logic_key", icon:"♟", name:"Klucz Logiki", rarity:"rzadki", type:"klucz", description:"Otwiera ścieżki zagadek, szachów i matematyki." }
+];
+
+export const ITEM_REWARDS = {
+  Nauka:["study_scroll","logic_key"], Zwierzęta:["owl_feather","heart_gem"], Relacje:["heart_gem","owl_feather"],
+  Ciało:["stable_token","dragon_flame"], Głowa:["study_scroll","logic_key"], Świat:["fox_compass","courage_crystal"],
+  Smok:["dragon_flame","courage_crystal"], Logika:["logic_key","fox_compass"], Dom:["heart_gem","courage_crystal"]
+};
+
+export const CRAFTING_RECIPES = [
+  { id:"map_fragment", name:"Fragment Mapy", icon:"◇", requires:["owl_feather","study_scroll"], description:"Łączy wiedzę z obserwacją." },
+  { id:"brave_badge", name:"Odznaka Odwagi", icon:"★", requires:["courage_crystal","dragon_flame"], description:"Nagroda za trudniejsze misje." },
+  { id:"bond_charm", name:"Amulet Więzi", icon:"♡", requires:["heart_gem","owl_feather"], description:"Wzmacnia relacje ze stadem." },
+  { id:"logic_lens", name:"Soczewka Logiki", icon:"✧", requires:["logic_key","fox_compass"], description:"Pomaga w zagadkach Lisa." }
+];
+
+export const COLLECTION_SETS = [
+  { id:"first_relics", name:"Pierwsze Relikty", icon:"✦", items:["courage_crystal","owl_feather","study_scroll"], rewardXp:50, description:"Pierwszy zestaw odkryć." },
+  { id:"dragon_path", name:"Ścieżka Smoka", icon:"ϟ", items:["dragon_flame","courage_crystal","brave_badge"], rewardXp:80, description:"Zestaw odwagi i działania." },
+  { id:"fox_path", name:"Ścieżka Lisa", icon:"◇", items:["fox_compass","logic_key","logic_lens"], rewardXp:80, description:"Zestaw logiki i odkrywania." },
+  { id:"herd_bond", name:"Więź Stada", icon:"♡", items:["heart_gem","owl_feather","bond_charm"], rewardXp:80, description:"Zestaw relacji i troski." }
+];

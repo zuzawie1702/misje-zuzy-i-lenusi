@@ -184,3 +184,25 @@ nav button.active{background:linear-gradient(135deg,#7c3aed,#db2777);color:#fff;
   .relationList{grid-template-columns:1fr}
   .giftGrid{grid-template-columns:repeat(2,1fr)}
 }
+
+
+/* Aktualizacja 3.2 — Ekwipunek i Kolekcje */
+.inventoryPreview{border-color:rgba(56,189,248,.38)}
+.inventoryGrid,.craftGrid,.collectionGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0 20px}
+.inventoryItem,.craftCard,.collectionCard{
+  min-height:180px;border-radius:22px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);padding:14px;display:flex;flex-direction:column;gap:7px;color:#fff
+}
+.inventoryItem span,.craftCard span,.collectionCard span{font-size:34px}
+.inventoryItem small,.craftCard small,.collectionCard small{color:#cbd5e1;line-height:1.35}
+.inventoryItem p,.craftCard p,.collectionCard p{font-size:13px;color:#dbe4ff}
+.inventoryItem em{margin-top:auto;font-style:normal;font-weight:950;color:#a5b4fc}
+.inventoryItem.empty{opacity:.45;filter:grayscale(.5)}
+.craftCard.ready,.collectionCard.ready{border-color:#67e8f9;background:linear-gradient(135deg,rgba(8,145,178,.24),rgba(124,58,237,.18))}
+@media(max-width:760px){
+  .inventoryGrid,.craftGrid,.collectionGrid{grid-template-columns:1fr 1fr;gap:10px}
+  .inventoryItem,.craftCard,.collectionCard{min-height:160px;padding:12px}
+}
+@media(max-width:420px){
+  .inventoryGrid,.craftGrid,.collectionGrid{grid-template-columns:1fr}
+}
